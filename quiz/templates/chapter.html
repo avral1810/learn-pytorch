@@ -29,7 +29,8 @@
               </a>
               {% if sidebar_chapter.id == chapter.id %}
               <div class="chapter-subnav">
-                <a class="chapter-subnav-link" href="#lesson-top">Lesson Top</a>
+                <a class="chapter-subnav-link" href="#lesson-top">Lesson</a>
+                <a class="chapter-subnav-link" href="#recap">Recap</a>
                 <a class="chapter-subnav-link" href="#quiz-app">Quiz</a>
               </div>
               {% endif %}
@@ -59,11 +60,12 @@
 
           <img src="{{ url_for('chapter_assets', filename=chapter.image) }}" alt="{{ chapter.title }}" class="chapter-hero-image">
 
+          {% set recap_ns = namespace(assigned=false) %}
           {% for section in chapter.sections %}
             {% if section["type"] == "paragraph" %}
             <p class="lesson-paragraph">{{ section["content"] }}</p>
             {% elif section["type"] == "list" %}
-            <section class="lesson-section" id="section-{{ loop.index }}"><h3>{{ section["title"] }}</h3><ul>{% for item in section["items"] %}<li>{{ item }}</li>{% endfor %}</ul></section>
+            <section class="lesson-section" id="{% if not recap_ns.assigned and section['title'] == 'Recap checkpoint' %}recap{% set recap_ns.assigned = true %}{% else %}section-{{ loop.index }}{% endif %}"><h3>{{ section["title"] }}</h3><ul>{% for item in section["items"] %}<li>{{ item }}</li>{% endfor %}</ul></section>
             {% elif section["type"] == "code" %}
             <section class="lesson-section" id="section-{{ loop.index }}"><h3>{{ section["title"] }}</h3><pre class="lesson-code">{{ section["content"] }}</pre></section>
             {% elif section["type"] == "math" %}
