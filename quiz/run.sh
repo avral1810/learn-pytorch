@@ -13,4 +13,4 @@ if [ ! -x "$VENV_DIR/bin/python" ]; then
 fi
 
 cd "$ROOT_DIR"
-"$VENV_DIR/bin/python" quiz/app.py
+"$VENV_DIR/bin/python" -m quiz.app

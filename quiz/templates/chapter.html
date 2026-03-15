@@ -15,6 +15,28 @@
         <p class="eyebrow">Chapter {{ chapter.number }}</p>
         <h1>{{ chapter.title }}</h1>
         <p class="sidebar-copy">{{ chapter.summary }}</p>
+        <div class="chapter-list-block">
+          <h2 class="sidebar-section-title">Chapters</h2>
+          <div class="chapter-sidebar-list">
+            {% for sidebar_chapter in chapters %}
+            <div class="chapter-sidebar-entry">
+              <a
+                class="chapter-sidebar-item {% if sidebar_chapter.id == chapter.id %}active{% endif %}"
+                href="{{ url_for('chapter_page', chapter_id=sidebar_chapter.id) }}"
+              >
+                <strong>{{ sidebar_chapter.number }}</strong>
+                <span>{{ sidebar_chapter.title }}</span>
+              </a>
+              {% if sidebar_chapter.id == chapter.id %}
+              <div class="chapter-subnav">
+                <a class="chapter-subnav-link" href="#lesson-top">Lesson Top</a>
+                <a class="chapter-subnav-link" href="#quiz-app">Quiz</a>
+              </div>
+              {% endif %}
+            </div>
+            {% endfor %}
+          </div>
+        </div>
         <div class="nav-stack">
           {% if chapter.previous_chapter %}<a class="nav-chip" href="{{ url_for('chapter_page', chapter_id=chapter.previous_chapter) }}">Previous Chapter</a>{% endif %}
           {% if chapter.next_chapter %}<a class="nav-chip" href="{{ url_for('chapter_page', chapter_id=chapter.next_chapter) }}">Next Chapter</a>{% endif %}
@@ -22,29 +44,61 @@
       </aside>
 
       <main class="chapter-main">
+        {% set first_question = chapter.questions[0] if chapter.questions else none %}
         <section class="lesson-panel">
-          <div class="lesson-top">
+          <div class="lesson-top" id="lesson-top">
             <div>
               <p class="lesson-tag">{{ chapter.lesson }}</p>
               <h2>Lesson Page</h2>
             </div>
             <div class="resource-links">
-              <a href="/{{ chapter.script_path }}">Tutorial Script</a>
-              <a href="/{{ chapter.pdf_path }}">Chapter PDF</a>
+              <button id="open-tutorial-drawer" class="resource-button" type="button">Open Tutorial</button>
+              <button id="open-pdf-drawer" class="resource-button" type="button" data-pdf-url="{{ url_for('resource_file', resource_path=chapter.pdf_path) }}">Open PDF</button>
             </div>
           </div>
 
           <img src="{{ url_for('chapter_assets', filename=chapter.image) }}" alt="{{ chapter.title }}" class="chapter-hero-image">
 
           {% for section in chapter.sections %}
-            {% if section.type == "paragraph" %}
-            <p class="lesson-paragraph">{{ section.content }}</p>
-            {% elif section.type == "list" %}
-            <section class="lesson-section"><h3>{{ section.title }}</h3><ul>{% for item in section.items %}<li>{{ item }}</li>{% endfor %}</ul></section>
-            {% elif section.type == "code" %}
-            <section class="lesson-section"><h3>{{ section.title }}</h3><pre class="lesson-code">{{ section.content }}</pre></section>
-            {% elif section.type == "callout" %}
-            <section class="lesson-callout"><h3>{{ section.title }}</h3><p>{{ section.content }}</p></section>
+            {% if section["type"] == "paragraph" %}
+            <p class="lesson-paragraph">{{ section["content"] }}</p>
+            {% elif section["type"] == "list" %}
+            <section class="lesson-section" id="section-{{ loop.index }}"><h3>{{ section["title"] }}</h3><ul>{% for item in section["items"] %}<li>{{ item }}</li>{% endfor %}</ul></section>
+            {% elif section["type"] == "code" %}
+            <section class="lesson-section" id="section-{{ loop.index }}"><h3>{{ section["title"] }}</h3><pre class="lesson-code">{{ section["content"] }}</pre></section>
+            {% elif section["type"] == "math" %}
+            <section class="lesson-section" id="section-{{ loop.index }}"><h3>{{ section["title"] }}</h3><pre class="lesson-math">{{ section["content"] }}</pre></section>
+            {% elif section["type"] == "graph" %}
+            <section class="lesson-section" id="section-{{ loop.index }}">
+              <h3>{{ section["title"] }}</h3>
+              <div class="lesson-graph">
+                <div class="lesson-graph-branches">
+                  {% for branch in section["branches"] %}
+                  <div class="lesson-graph-branch">
+                    {% for node in branch %}
+                    <div class="lesson-graph-node">{{ node }}</div>
+                    {% if not loop.last %}
+                    <div class="lesson-graph-arrow">→</div>
+                    {% endif %}
+                    {% endfor %}
+                  </div>
+                  {% endfor %}
+                </div>
+                <div class="lesson-graph-merge">
+                  <div class="lesson-graph-merge-label">{{ section["merge_label"] }}</div>
+                </div>
+                <div class="lesson-graph-chain">
+                  {% for node in section["result_chain"] %}
+                  <div class="lesson-graph-node lesson-graph-node-accent">{{ node }}</div>
+                  {% if not loop.last %}
+                  <div class="lesson-graph-arrow">→</div>
+                  {% endif %}
+                  {% endfor %}
+                </div>
+              </div>
+            </section>
+            {% elif section["type"] == "callout" %}
+            <section class="lesson-callout" id="section-{{ loop.index }}"><h3>{{ section["title"] }}</h3><p>{{ section["content"] }}</p></section>
             {% endif %}
           {% endfor %}
         </section>
@@ -53,28 +107,47 @@
           <div class="quiz-header">
             <div>
               <p class="eyebrow">Chapter Quiz</p>
-              <h2 id="question-title">Loading quiz...</h2>
+              <p id="question-progress" class="question-progress">{% if first_question %}1 / {{ chapter.questions|length }}{% endif %}</p>
+              <h2 id="question-title">{{ first_question.title if first_question else "No quiz questions yet" }}</h2>
             </div>
             <div class="button-row">
               <button id="prev-question" class="action-button ghost">Previous</button>
               <button id="next-question" class="action-button ghost">Next</button>
-              <button id="run-button" class="action-button secondary">Run</button>
-              <button id="submit-button" class="action-button primary">Submit</button>
-              <button id="reset-button" class="action-button ghost">Reset</button>
             </div>
           </div>
 
-          <p id="question-prompt" class="question-prompt"></p>
+          <p id="question-prompt" class="question-prompt">{{ first_question.prompt if first_question else "" }}</p>
           <div class="example-box">
             <h3>Visible Checks</h3>
-            <ul id="visible-examples"></ul>
+            <ul id="visible-examples">
+              {% if first_question %}
+                {% for example in first_question.visible_examples %}
+                <li>{{ example }}</li>
+                {% endfor %}
+              {% endif %}
+            </ul>
           </div>
 
-          <section class="editor-panel"><textarea id="code-editor"></textarea></section>
+          <section class="editor-grid">
+            <div class="code-pane">
+              <div class="code-pane-header">
+                <h3>Your Answer</h3>
+                <span class="code-pane-note">Write the code for this question here</span>
+              </div>
+              <section class="editor-panel"><textarea id="code-editor">{% if first_question %}{{ first_question.starter_code }}{% endif %}</textarea></section>
+              <div class="button-row quiz-editor-actions">
+                <button id="run-button" class="action-button secondary">Run</button>
+                <button id="submit-button" class="action-button primary">Submit</button>
+                <button id="hint-button-global" class="action-button ghost">Hint</button>
+                <button id="reset-button" class="action-button ghost">Reset</button>
+                <button id="next-question-inline" class="action-button primary is-hidden" type="button">Next</button>
+              </div>
+            </div>
+          </section>
 
           <section class="results-panel">
             <div class="results-grid">
-              <div class="result-card"><h3>Summary</h3><div id="summary-output" class="result-output"></div></div>
+              <div class="result-card"><h3>Summary</h3><div id="summary-output" class="result-output">{% if first_question %}Question 1 of {{ chapter.questions|length }}{% endif %}</div></div>
               <div class="result-card"><h3>Stdout</h3><pre id="stdout-output" class="result-output"></pre></div>
               <div class="result-card"><h3>Stderr</h3><pre id="stderr-output" class="result-output"></pre></div>
             </div>
@@ -83,8 +156,51 @@
       </main>
     </div>
 
+    <aside id="pdf-drawer" class="resource-drawer pdf-drawer" aria-hidden="true">
+      <div class="resource-drawer-header">
+        <h2>Chapter PDF</h2>
+        <button id="pdf-drawer-close" class="action-button ghost" type="button">Close</button>
+      </div>
+      <iframe id="pdf-drawer-frame" class="resource-drawer-frame" title="Chapter PDF preview"></iframe>
+    </aside>
+
+    <aside id="tutorial-drawer" class="resource-drawer tutorial-drawer" aria-hidden="true">
+      <div class="resource-drawer-header">
+        <h2>Tutorial + Playground</h2>
+        <button id="tutorial-drawer-close" class="action-button ghost" type="button">Close</button>
+      </div>
+      <div class="tutorial-drawer-grid">
+        <div class="code-pane">
+          <div class="code-pane-header">
+            <h3>Tutorial Script</h3>
+            <span class="code-pane-note">Read-only</span>
+          </div>
+          <section class="editor-panel drawer-editor-panel">
+            <textarea id="tutorial-script-editor">{{ chapter.script_content }}</textarea>
+          </section>
+        </div>
+        <div class="code-pane">
+          <div class="code-pane-header">
+            <h3>Playground</h3>
+            <div class="button-row">
+              <button id="run-playground-button" class="action-button secondary" type="button">Run</button>
+              <button id="reset-playground-button" class="action-button ghost" type="button">Reset</button>
+            </div>
+          </div>
+          <section class="editor-panel drawer-editor-panel">
+            <textarea id="playground-editor">{{ chapter.playground_starter }}</textarea>
+          </section>
+          <div class="drawer-output-grid">
+            <div class="result-card"><h3>Playground Stdout</h3><pre id="playground-stdout" class="result-output"></pre></div>
+            <div class="result-card"><h3>Playground Stderr</h3><pre id="playground-stderr" class="result-output"></pre></div>
+          </div>
+        </div>
+      </div>
+    </aside>
+
     <script>window.__CHAPTER_DATA__ = {{ chapter|tojson }};</script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/codemirror.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/addon/comment/comment.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/mode/python/python.min.js"></script>
     <script src="{{ url_for('static', filename='app.js') }}"></script>
   </body>

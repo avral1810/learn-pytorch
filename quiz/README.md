@@ -19,11 +19,29 @@ The quiz setup is self-enclosed.
 bash quiz/setup.sh
 ```
 
+This setup pins `numpy<2` because the current PyTorch build in the quiz environment may fail with NumPy 2.x.
+
+If you already created `quiz/.venv` before this fix, rerun setup:
+
+```bash
+bash quiz/setup.sh
+```
+
+That will reconcile the existing environment and downgrade NumPy if needed.
+
 ## Run
 
 ```bash
 bash quiz/run.sh
 ```
+
+This script starts the app with:
+
+```bash
+python -m quiz.app
+```
+
+so the `quiz` package imports resolve correctly.
 
 Then open:
 

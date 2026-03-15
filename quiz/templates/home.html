@@ -16,14 +16,16 @@
 
       <section class="chapter-grid">
         {% for chapter in chapters %}
+        <a class="chapter-card-link" href="{{ url_for('chapter_page', chapter_id=chapter.id) }}">
         <article class="chapter-card">
           <img src="{{ url_for('chapter_assets', filename=chapter.image) }}" alt="{{ chapter.title }}" class="chapter-card-image">
           <p class="lesson-tag">Chapter {{ chapter.number }}</p>
           <h2>{{ chapter.title }}</h2>
           <p>{{ chapter.summary }}</p>
           <p class="card-meta">{{ chapter.question_count }} quiz question{% if chapter.question_count != 1 %}s{% endif %}</p>
-          <a class="card-link" href="{{ url_for('chapter_page', chapter_id=chapter.id) }}">Open Chapter</a>
+          <span class="card-link">Open Chapter</span>
         </article>
+        </a>
         {% endfor %}
       </section>
     </main>

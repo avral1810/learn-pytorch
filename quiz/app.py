@@ -6,7 +6,7 @@ import sys
 import tempfile
 from pathlib import Path
 
-from flask import Flask, abort, jsonify, render_template, request, send_from_directory
+from flask import Flask, abort, jsonify, render_template, request, send_file, send_from_directory
 
 from quiz.content.data import get_chapter, public_chapter_summaries
 from quiz.questions.data import QUESTIONS_BY_ID, get_public_chapter_detail
@@ -93,6 +93,30 @@ def execute_submission(chapter_id: str, question_id: str, code: str, mode: str) 
     return payload, 200
 
 
+def execute_playground(code: str) -> tuple[dict[str, object], int]:
+    with tempfile.TemporaryDirectory(prefix="quiz-playground-") as temp_dir:
+        script_path = Path(temp_dir) / "playground.py"
+        script_path.write_text(code, encoding="utf-8")
+        try:
+            completed = subprocess.run(
+                [runner_python(), str(script_path)],
+                cwd=str(ROOT_DIR),
+                capture_output=True,
+                text=True,
+                timeout=8,
+                check=False,
+            )
+        except subprocess.TimeoutExpired:
+            return {"ok": False, "stdout": "", "stderr": "", "error": "Playground execution timed out after 8 seconds."}, 200
+
+    return {
+        "ok": completed.returncode == 0,
+        "stdout": completed.stdout,
+        "stderr": completed.stderr,
+        "error": "" if completed.returncode == 0 else f"Exited with status {completed.returncode}",
+    }, 200
+
+
 @app.get("/")
 def index():
     return render_template("home.html", chapters=public_chapter_summaries())
@@ -103,7 +127,7 @@ def chapter_page(chapter_id: str):
     chapter = get_public_chapter_detail(chapter_id)
     if chapter is None:
         abort(404)
-    return render_template("chapter.html", chapter=chapter)
+    return render_template("chapter.html", chapter=chapter, chapters=public_chapter_summaries())
 
 
 @app.get("/api/chapters")
@@ -127,6 +151,24 @@ def health():
 @app.get("/chapter-assets/<path:filename>")
 def chapter_assets(filename: str):
     return send_from_directory(CONTENT_ASSET_DIR, filename)
+
+
+@app.get("/resources/<path:resource_path>")
+def resource_file(resource_path: str):
+    target = (ROOT_DIR / resource_path).resolve()
+    root = ROOT_DIR.resolve()
+
+    if not str(target).startswith(str(root)) or not target.exists() or not target.is_file():
+        abort(404)
+
+    return send_file(target)
+
+
+@app.post("/api/playground")
+def run_playground():
+    payload = request.get_json(force=True)
+    result, status = execute_playground(payload["code"])
+    return jsonify(result), status
 
 
 @app.post("/api/run")
