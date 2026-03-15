@@ -1,0 +1,62 @@
+Lesson 03: Linear Regression With nn.Module
+===========================================
+
+Goal
+----
+See how PyTorch packages the same linear-regression idea into reusable abstractions.
+
+What changed from the from-scratch version
+------------------------------------------
+Instead of raw tensors, we use:
+
+    nn.Linear(1, 1)
+
+Instead of manual updates, we use:
+
+    torch.optim.SGD
+
+Instead of the full dataset in one pass, we use:
+
+    DataLoader(..., batch_size=32, shuffle=True)
+
+Why this is useful
+------------------
+The math is the same, but PyTorch manages:
+- parameter registration
+- batching
+- optimizer state
+- cleaner code structure
+
+Training pattern
+----------------
+
+    preds = model(batch_x)
+    loss = loss_fn(preds, batch_y)
+    optimizer.zero_grad()
+    loss.backward()
+    optimizer.step()
+
+What `model.parameters()` gives you
+-----------------------------------
+It returns the learnable tensors inside the model.
+
+For `nn.Linear(1, 1)`, that means:
+- one weight tensor
+- one bias tensor
+
+Mini-batches
+------------
+Each optimizer step only sees one small batch, not all 200 points.
+That is how training usually works in larger models.
+
+Exercises
+---------
+1. Print `list(model.parameters())` before training.
+2. Compare results with batch size 1 and batch size 200.
+3. Replace SGD with Adam and compare convergence.
+
+Self-check questions
+--------------------
+1. What does `nn.Linear(1, 1)` represent mathematically?
+2. Why do we shuffle batches?
+3. What does the optimizer do after `backward()`?

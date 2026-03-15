@@ -1,0 +1,215 @@
+Lesson 11: Transformer Basics
+=============================
+
+Goal
+----
+Understand the basic flow of a Transformer classifier without drowning in every math detail at once.
+
+This lesson is about:
+- token ids
+- embeddings
+- positional encoding
+- encoder layers
+- pooling
+- classification
+
+Why Transformers are different
+------------------------------
+An MLP sees fixed-size feature vectors.
+A CNN sees local spatial neighborhoods.
+An LSTM reads sequences step by step.
+
+A Transformer mainly uses attention so each token can interact with other tokens.
+
+High-level pipeline
+-------------------
+
+    token ids
+      -> embedding
+      -> positional encoding
+      -> transformer encoder
+      -> pooling
+      -> classifier
+
+Token ids
+---------
+The input to the model is not raw words.
+It is integer token ids.
+
+Example:
+
+    [4, 7, 2, 9, 1, 3, 8, 5]
+
+If batch size is 64 and sequence length is 8, input shape is:
+
+    (64, 8)
+
+Meaning:
+- 64 sequences
+- 8 token positions per sequence
+
+Embedding layer
+---------------
+The embedding layer maps each integer token id to a dense vector.
+
+If:
+
+    VOCAB_SIZE = 20
+    EMBED_DIM = 32
+
+then each token becomes a vector of length 32.
+
+Shape change:
+
+    (64, 8) -> (64, 8, 32)
+
+This is one of the most important Transformer shapes to memorize.
+
+Meaning of each dimension:
+- batch
+- sequence position
+- embedding features
+
+Why positional encoding is needed
+---------------------------------
+If you only embed token ids, the model knows which tokens exist but not their order.
+
+That is a problem because:
+
+    [dog bites man]
+
+and:
+
+    [man bites dog]
+
+contain similar tokens but different meaning.
+
+So we add positional information to each token representation.
+
+The script uses sinusoidal positional encoding.
+
+You do not need to memorize the formula yet.
+The main idea is:
+
+    token meaning + position information
+
+Encoder layer intuition
+-----------------------
+The Transformer encoder lets each token representation be updated using information
+from other tokens in the sequence.
+
+Very rough intuition:
+- token 1 can "look at" token 5
+- token 5 can "look at" token 2
+- each token builds a richer contextual representation
+
+The script uses:
+
+    nn.TransformerEncoderLayer(...)
+    nn.TransformerEncoder(...)
+
+Shape through the encoder
+-------------------------
+Input to encoder:
+
+    (64, 8, 32)
+
+Output from encoder:
+
+    (64, 8, 32)
+
+Important beginner point:
+
+    the encoder changes the values, not necessarily the shape
+
+That happens a lot in deep learning:
+- shape may stay the same
+- meaning of the features changes
+
+Pooling
+-------
+At the end, we want one prediction per sequence, not one prediction per token.
+
+So we convert:
+
+    (64, 8, 32)
+
+into:
+
+    (64, 32)
+
+by averaging over the sequence dimension:
+
+    pooled = x.mean(dim=1)
+
+This is called mean pooling.
+
+Then:
+
+    classifier: Linear(32, 2)
+
+produces:
+
+    (64, 2)
+
+which are the class logits.
+
+What the toy task is doing
+--------------------------
+The labels depend on whether the token values sum to a large amount.
+
+This is not a realistic NLP task.
+It is just a simple way to teach the shape flow and training logic.
+
+Why `batch_first=True` matters
+------------------------------
+PyTorch sequence APIs sometimes use:
+
+    (seq_len, batch, features)
+
+and sometimes:
+
+    (batch, seq_len, features)
+
+This script uses:
+
+    batch_first=True
+
+so shapes stay in the more beginner-friendly order:
+
+    (batch, seq_len, features)
+
+Common beginner mistakes
+------------------------
+1. Forgetting what each axis means
+2. Confusing token ids with embeddings
+3. Thinking embeddings are one-hot vectors
+4. Forgetting positional information
+5. Not understanding why pooling is needed for sequence classification
+
+What to focus on first
+----------------------
+Do not try to master all attention math immediately.
+First, understand:
+- input shape
+- embedding shape
+- encoder output shape
+- pooled vector shape
+- final logits shape
+
+Once that is solid, attention math becomes easier.
+
+Exercises
+---------
+1. Print the shape after embedding, positional encoding, encoder, and pooling.
+2. Change `EMBED_DIM` from 32 to 64 and observe shape changes.
+3. Increase sequence length from 8 to 16.
+4. Replace mean pooling with `x[:, 0]` and compare results.
+
+Self-check questions
+--------------------
+1. Why are token ids turned into embeddings?
+2. Why do we add positional information?
+3. Why does the encoder output keep the same basic shape?
+4. Why do we pool across the sequence dimension before classification?
+5. What does `batch_first=True` change?

@@ -1,0 +1,211 @@
+Lesson 07: Basic Neural Network With nn.Sequential
+===================================================
+
+Goal
+----
+You already saw how to build an MLP from raw tensors.
+This lesson shows the same idea using PyTorch's higher-level layers.
+
+This is important because beginners often see `nn.Sequential(...)` and feel like
+the model is "magic". It is not magic. It is just a cleaner wrapper around the
+same matrix multiplications, bias additions, activation functions, and gradients.
+
+Big picture
+-----------
+The model solves a 2D classification problem.
+Each example is a point with:
+
+    x = [x1, x2]
+
+The label depends on which quadrant the point lives in.
+
+That means the model must learn a nonlinear decision boundary.
+A single linear layer is usually not enough.
+
+The network
+-----------
+
+    nn.Linear(2, 16)
+    nn.ReLU()
+    nn.Linear(16, 16)
+    nn.ReLU()
+    nn.Linear(16, 2)
+
+This means:
+
+    input features: 2
+    hidden size: 16
+    hidden size: 16
+    output logits: 2
+
+Shape flow through the network
+------------------------------
+Suppose one batch has shape:
+
+    batch_x shape = (64, 2)
+
+Then:
+
+    after Linear(2, 16)   -> (64, 16)
+    after ReLU            -> (64, 16)
+    after Linear(16, 16)  -> (64, 16)
+    after ReLU            -> (64, 16)
+    after Linear(16, 2)   -> (64, 2)
+
+Why does the batch dimension stay 64?
+-------------------------------------
+Because the layer transforms each example in the batch.
+The number of examples does not change.
+
+Only the feature dimension changes.
+
+Mental model:
+
+    batch dimension = how many examples
+    feature dimension = how many numbers describe each example at this stage
+
+What a linear layer really does
+-------------------------------
+If a layer is:
+
+    nn.Linear(in_features, out_features)
+
+then mathematically it does:
+
+    output = input @ weight.T + bias
+
+If input shape is:
+
+    (batch, in_features)
+
+then output shape is:
+
+    (batch, out_features)
+
+Why ReLU is needed
+------------------
+Without ReLU, stacking linear layers is still just one linear transformation.
+
+That means:
+
+    Linear -> Linear -> Linear
+
+without nonlinearities can be simplified into one big linear map.
+
+So the network would still only learn straight-line style boundaries.
+
+ReLU fixes that by introducing nonlinearity:
+
+    ReLU(z) = max(0, z)
+
+It keeps positive values and turns negative values into zero.
+
+Why the output is 2 numbers
+---------------------------
+This is a 2-class problem.
+The final layer returns:
+
+    [score_for_class_0, score_for_class_1]
+
+These scores are called logits.
+
+Logits are not probabilities.
+They are raw scores that say how strongly the model prefers one class over another.
+
+CrossEntropyLoss
+----------------
+`nn.CrossEntropyLoss()` expects:
+- logits of shape `(batch, num_classes)`
+- integer labels of shape `(batch,)`
+
+So here:
+
+    logits shape = (64, 2)
+    labels shape = (64,)
+
+Very important beginner point:
+
+    CrossEntropyLoss wants raw logits, not softmax probabilities.
+
+PyTorch applies the needed internal math in a stable way.
+
+Train and eval mode
+-------------------
+The script calls:
+
+    model.train()
+
+before training and:
+
+    model.eval()
+
+before validation.
+
+In this small network, it does not change much because there is no dropout or batchnorm.
+But it is still good practice and becomes important in larger models.
+
+Why validation exists
+---------------------
+Training accuracy tells you how well the model fits the examples it sees while learning.
+Validation accuracy tells you how well the model generalizes to held-out data.
+
+If train accuracy goes up but validation accuracy stays bad, the model may be overfitting.
+
+Step-by-step training loop
+--------------------------
+
+    logits = model(batch_x)
+    loss = loss_fn(logits, batch_y)
+    optimizer.zero_grad()
+    loss.backward()
+    optimizer.step()
+
+Meaning:
+- `model(batch_x)` runs the forward pass
+- `loss_fn(...)` measures error
+- `zero_grad()` clears old gradients
+- `backward()` computes new gradients
+- `step()` updates parameters
+
+What is stored inside the model
+-------------------------------
+Each `nn.Linear` layer has:
+- a weight tensor
+- a bias tensor
+
+So this network contains several learnable parameter tensors.
+
+You do not see them manually in the script because PyTorch stores them inside the module.
+
+Why this lesson matters
+-----------------------
+This is the standard PyTorch pattern for many everyday models:
+- define a module
+- choose a loss
+- choose an optimizer
+- train in a loop
+
+It is shorter than the from-scratch version, but it is the same core idea.
+
+Common beginner mistakes
+------------------------
+1. Applying softmax before `CrossEntropyLoss`
+2. Forgetting `optimizer.zero_grad()`
+3. Confusing logits with predicted class ids
+4. Using labels with the wrong shape or dtype
+5. Not understanding that the first dimension is usually the batch
+
+Exercises
+---------
+1. Print the shape after each layer.
+2. Print `logits[:5]` for a small batch and inspect the two class scores.
+3. Replace `ReLU` with `Tanh` and compare training.
+4. Change the hidden size from 16 to 4 and see what happens.
+
+Self-check questions
+--------------------
+1. Why can this network solve the quadrant problem better than logistic regression?
+2. Why do we not pass softmaxed probabilities into `CrossEntropyLoss`?
+3. Which dimension is the batch and which is the feature dimension?
+4. What does each final logit mean?
+5. Why do we still call `train()` and `eval()` in a small model like this?

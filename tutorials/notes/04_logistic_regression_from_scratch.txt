@@ -1,0 +1,67 @@
+Lesson 04: Logistic Regression From Scratch
+===========================================
+
+Goal
+----
+Move from predicting continuous values to binary classification.
+
+Difference from linear regression
+---------------------------------
+Linear regression predicts any real number.
+Logistic regression predicts a probability between 0 and 1.
+
+Pipeline
+--------
+
+    logits = x @ weight + bias
+    probs = sigmoid(logits)
+
+Sigmoid
+-------
+
+    sigmoid(z) = 1 / (1 + e^(-z))
+
+It squeezes any real number into the range `(0, 1)`.
+
+Meaning:
+- near 0.0 -> model thinks class 0
+- near 1.0 -> model thinks class 1
+
+Binary cross-entropy
+--------------------
+We measure classification error with BCE:
+
+    -(y*log(p) + (1-y)*log(1-p))
+
+Why clamp probabilities
+-----------------------
+If `p` becomes exactly 0 or 1, `log(p)` can break numerically.
+So the script clamps probabilities slightly away from the ends.
+
+Prediction rule
+---------------
+
+    if probability >= 0.5:
+        class = 1
+    else:
+        class = 0
+
+Key lesson
+----------
+This is the simplest real classifier and introduces:
+- logits
+- sigmoid
+- probability outputs
+- threshold-based decisions
+
+Exercises
+---------
+1. Print the first 10 probabilities after training.
+2. Change the threshold from `0.5` to `0.7`.
+3. Change the synthetic boundary in the data generator.
+
+Self-check questions
+--------------------
+1. Why do we use sigmoid?
+2. Why is MSE not the standard loss for binary classification?
+3. What is the difference between a logit and a probability?

@@ -1,0 +1,218 @@
+Lesson 08: CNN Basics
+=====================
+
+Goal
+----
+Understand what a convolutional neural network does to an image tensor.
+
+This lesson is mostly about shapes and intuition.
+If you can predict the shape after each layer, CNNs become much easier.
+
+Why CNNs exist
+--------------
+A fully connected network can work on images, but it ignores image structure.
+
+Images have:
+- height
+- width
+- nearby pixels that are related
+
+CNNs take advantage of that structure.
+
+Core idea:
+
+    use small filters that slide across the image
+
+instead of connecting every pixel to every neuron immediately.
+
+Image tensor format
+-------------------
+PyTorch image batches usually use:
+
+    (batch, channels, height, width)
+
+The script starts with:
+
+    batch shape = (4, 1, 28, 28)
+
+Meaning:
+- 4 images
+- 1 channel each
+- 28 pixels high
+- 28 pixels wide
+
+If this were RGB images, the channel count would usually be 3.
+
+What a convolution does
+-----------------------
+A convolution layer applies a small learned filter over local regions.
+
+Example:
+
+    Conv2d(1, 8, kernel_size=3, padding=1)
+
+Meaning:
+- input channels = 1
+- output channels = 8
+- filter size = 3x3
+- padding = 1 pixel around the border
+
+What are output channels?
+-------------------------
+They are also called feature maps.
+
+You can think of them as:
+- detector 1: maybe edge-like pattern
+- detector 2: maybe corner-like pattern
+- detector 3: maybe texture-like pattern
+- ...
+
+The model learns these detectors from data.
+
+Why output shape becomes `(4, 8, 28, 28)`
+-----------------------------------------
+Input:
+
+    (4, 1, 28, 28)
+
+After convolution:
+- batch stays 4
+- output channels become 8
+- height stays 28 because padding=1 for a 3x3 filter
+- width stays 28 for the same reason
+
+So:
+
+    (4, 1, 28, 28) -> (4, 8, 28, 28)
+
+Why ReLU appears after convolution
+----------------------------------
+Convolution is linear.
+ReLU adds nonlinearity.
+
+Without nonlinear activations, many stacked layers would still collapse into a linear map.
+
+What pooling does
+-----------------
+The script uses:
+
+    MaxPool2d(2)
+
+This looks at each 2x2 region and keeps the maximum value.
+
+Why do this?
+------------
+- reduce spatial size
+- keep strong feature responses
+- make later computation cheaper
+- add some translation robustness
+
+Shape example:
+
+    (4, 8, 28, 28) -> (4, 8, 14, 14)
+
+because height and width are halved.
+
+Second convolution block
+------------------------
+The script then does:
+
+    Conv2d(8, 16, kernel_size=3, padding=1)
+    ReLU()
+    MaxPool2d(2)
+
+So:
+
+    (4, 8, 14, 14)
+      -> conv -> (4, 16, 14, 14)
+      -> relu -> (4, 16, 14, 14)
+      -> pool -> (4, 16, 7, 7)
+
+Why channels increase while height and width shrink
+---------------------------------------------------
+This is a common CNN pattern:
+- deeper layers use more channels
+- deeper layers use smaller spatial maps
+
+Reason:
+- later layers represent more kinds of features
+- but they do so on increasingly compact feature maps
+
+Flattening
+----------
+After convolutional layers, the tensor is:
+
+    (4, 16, 7, 7)
+
+The classifier wants a flat vector per example, so:
+
+    16 * 7 * 7 = 784
+
+Therefore:
+
+    (4, 16, 7, 7) -> (4, 784)
+
+The batch dimension stays 4.
+
+Classifier block
+----------------
+Then the script uses linear layers:
+
+    Linear(784, 32)
+    ReLU()
+    Linear(32, 3)
+
+So final output shape is:
+
+    (4, 3)
+
+Meaning:
+- 4 examples
+- 3 class scores per example
+
+How to think about a CNN as a whole
+-----------------------------------
+First part:
+
+    image -> feature extractor
+
+Second part:
+
+    extracted features -> classifier
+
+That is why many CNNs are conceptually split into:
+- convolutional backbone
+- classification head
+
+Why printing shapes is so important
+-----------------------------------
+In CNNs, many bugs come from:
+- wrong flatten size
+- wrong channel count
+- wrong image size
+- forgetting batch dimension
+
+Printing the tensor shape after every layer is one of the fastest ways to learn.
+
+Common beginner mistakes
+------------------------
+1. Confusing channels with batch size
+2. Forgetting images are `(N, C, H, W)` in PyTorch
+3. Using the wrong linear input size after flatten
+4. Thinking pooling changes channels
+5. Forgetting that convolution output channels are chosen by the layer definition
+
+Exercises
+---------
+1. Change the input from `(4, 1, 28, 28)` to `(4, 1, 32, 32)` and recompute the flatten size.
+2. Remove one pooling layer and see how the final flatten size changes.
+3. Change output channels from 8/16 to 4/8 and print the new shapes.
+4. Add comments beside each printed shape with your own explanation.
+
+Self-check questions
+--------------------
+1. Why does `Conv2d(1, 8, ...)` create 8 output channels?
+2. Why does `MaxPool2d(2)` usually halve height and width?
+3. Why do we flatten before linear layers?
+4. Which dimensions represent spatial structure?
+5. Why are CNNs usually better than plain MLPs for images?

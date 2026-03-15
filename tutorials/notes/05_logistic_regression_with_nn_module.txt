@@ -1,0 +1,46 @@
+Lesson 05: Logistic Regression With nn.Module
+=============================================
+
+Goal
+----
+Use PyTorch's standard binary-classification stack.
+
+Core model
+----------
+
+    nn.Linear(2, 1)
+
+This produces one raw logit per example.
+
+Why no sigmoid in `forward()`
+-----------------------------
+The loss function is:
+
+    nn.BCEWithLogitsLoss()
+
+It already combines:
+- sigmoid
+- binary cross-entropy
+
+in one numerically stable operation.
+
+This is important:
+- training uses raw logits
+- evaluation can convert logits to probabilities with `torch.sigmoid`
+
+Why this matters
+----------------
+This "logits during training, probabilities for interpretation" pattern
+appears in many real models.
+
+Exercises
+---------
+1. Print logits and then probabilities for the same batch.
+2. Compare `SGD` and `Adam`.
+3. Change the dataset to 3 input features and update the layer.
+
+Self-check questions
+--------------------
+1. Why is `BCEWithLogitsLoss` preferred over manual sigmoid + BCE?
+2. When should you call `torch.sigmoid`?
+3. What shape should the labels have here?

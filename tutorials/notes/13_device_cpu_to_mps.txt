@@ -1,0 +1,87 @@
+Lesson 13: CPU to Apple Metal (MPS)
+===================================
+
+Goal
+----
+Move the exact same PyTorch workflow from CPU to Apple Metal when you are ready.
+
+Device basics
+-------------
+A tensor and the model parameters must live on the same device.
+
+Common devices:
+- cpu
+- cuda
+- mps
+
+Selection logic
+---------------
+The script checks devices in this order:
+
+    if CUDA exists: use CUDA
+    else if MPS exists: use MPS
+    else: use CPU
+
+Why start on CPU?
+-----------------
+CPU is simpler for learning:
+- easier debugging
+- fewer device-specific surprises
+- easier printing and inspecting
+
+When to switch to MPS
+---------------------
+Switch once you understand:
+- tensors and shapes
+- model forward pass
+- training loop
+- loss and backward pass
+
+Diagram:
+
+    CPU learning phase
+           |
+           v
+    same code + different device
+           |
+           v
+        MPS acceleration
+
+Core rule
+---------
+Move both model and tensors:
+
+    model.to(device)
+    x = x.to(device)
+    y = y.to(device)
+
+If one stays on CPU and the other moves to MPS, PyTorch raises a device mismatch error.
+
+What the script demonstrates
+----------------------------
+- selecting a device
+- moving a model
+- creating tensors on that device
+- running forward pass
+- computing loss
+- running backward pass
+
+Mental model
+------------
+This should feel like:
+
+    same math
+    same training loop
+    different hardware target
+
+What to try next
+----------------
+- Force CPU by setting device = torch.device("cpu")
+- If MPS is available later, set device = torch.device("mps")
+- Re-run earlier tutorials with the same device pattern
+
+Self-check questions
+--------------------
+1. Why must model and tensors be on the same device?
+2. Why is CPU a better learning environment at first?
+3. What code usually changes when moving from CPU to MPS?

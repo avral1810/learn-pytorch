@@ -1,0 +1,196 @@
+Lesson 12: Toy GAN
+==================
+
+Goal
+----
+Learn the basic adversarial training idea behind GANs without starting from full image generation.
+
+This lesson is intentionally tiny.
+The "real data" is just a 1D number distribution.
+
+That is enough to teach:
+- generator
+- discriminator
+- alternating updates
+- `detach()`
+- why GANs can be unstable
+
+What a GAN is
+-------------
+GAN stands for Generative Adversarial Network.
+
+It contains two models:
+
+Generator:
+- starts from random noise
+- tries to create fake samples that look real
+
+Discriminator:
+- receives real and fake samples
+- tries to tell them apart
+
+This creates a game:
+- discriminator tries not to be fooled
+- generator tries to fool it
+
+Why this lesson uses 1D data
+----------------------------
+Image GANs are much harder.
+They involve:
+- large networks
+- fragile training
+- many failure modes
+
+For a beginner, that can hide the main idea.
+
+Here the real data is just:
+
+    N(mean=2.0, std about 0.7)
+
+So if the generator learns well, its fake outputs should move toward that region.
+
+Generator pipeline
+------------------
+
+    random noise z shape (batch, 3)
+      -> MLP
+      -> fake sample shape (batch, 1)
+
+Discriminator pipeline
+----------------------
+
+    sample shape (batch, 1)
+      -> MLP
+      -> logit shape (batch, 1)
+
+The discriminator outputs one logit:
+- large positive = looks real
+- large negative = looks fake
+
+Discriminator training step
+---------------------------
+The discriminator sees:
+- real samples labeled 1
+- fake samples labeled 0
+
+Loss idea:
+
+    classify real as real
+    classify fake as fake
+
+Important line:
+
+    fake_samples = generator(...).detach()
+
+Why detach here?
+----------------
+Because during discriminator training, we only want to update discriminator parameters.
+
+We do not want gradients from the discriminator loss to flow back into the generator
+during this step.
+
+`detach()` means:
+
+    use these fake values
+    but cut them off from the generator graph
+
+Generator training step
+-----------------------
+Then we do a second step:
+
+    generated = generator(...)
+    fooled_logits = discriminator(generated)
+
+Now the generator wants the discriminator to predict:
+
+    real (1)
+
+for the fake samples.
+
+So generator loss means:
+
+    make fake samples that fool the discriminator
+
+Why there are two optimizers
+----------------------------
+The two models have different parameters and different objectives.
+
+So we use:
+- one optimizer for the generator
+- one optimizer for the discriminator
+
+Alternating updates
+-------------------
+The loop is:
+
+    1. update discriminator
+    2. update generator
+
+This alternating structure is one of the defining ideas of GAN training.
+
+Why GANs are hard
+-----------------
+Unlike ordinary classifiers, the target is moving.
+
+Why?
+Because:
+- the discriminator changes
+- the generator changes
+- each one responds to the other
+
+So the optimization landscape keeps shifting.
+
+Common GAN failure modes
+------------------------
+Even though this tiny example is simpler, real GANs can suffer from:
+- instability
+- one network overpowering the other
+- mode collapse
+
+Mode collapse means the generator produces limited varieties of outputs.
+
+What `fake_mean` tells you
+--------------------------
+The script prints:
+
+    fake_mean
+
+Since the real data is centered near 2.0, this gives a rough quick check:
+
+    is the generator moving toward the real distribution?
+
+It is not a full evaluation, but it is a useful simple signal.
+
+Relationship to earlier lessons
+-------------------------------
+GANs reuse ideas you already learned:
+- linear layers
+- logits
+- BCEWithLogits-style thinking
+- `detach()`
+- optimizer steps
+
+The new part is that now two networks interact.
+
+Common beginner mistakes
+------------------------
+1. Forgetting why fake samples are detached in the discriminator step
+2. Thinking generator and discriminator are trained with the same goal
+3. Forgetting that generator wants discriminator to output "real" for fake samples
+4. Expecting GAN losses to behave as smoothly as normal classifier losses
+5. Starting with image GANs before understanding the training game
+
+Exercises
+---------
+1. Change the real-data mean from 2.0 to -1.0 and observe `fake_mean`.
+2. Increase generator noise dimension from 3 to 8.
+3. Increase hidden width from 16 to 32.
+4. Print a few generated samples every 50 steps.
+
+Self-check questions
+--------------------
+1. What is the job of the generator?
+2. What is the job of the discriminator?
+3. Why do we detach fake samples during the discriminator step?
+4. Why are there two optimizers?
+5. Why are GANs usually harder to train than ordinary classifiers?

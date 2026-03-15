@@ -1,0 +1,86 @@
+Lesson 02: Linear Regression From Scratch
+=========================================
+
+Goal
+----
+Learn the supervised learning loop without `nn.Module` and without an optimizer object.
+
+What "from scratch" means here
+------------------------------
+We still use PyTorch tensors and autograd, but we do not use:
+- `nn.Linear`
+- `nn.Module`
+- `torch.optim`
+
+Instead, we define:
+- `weight`
+- `bias`
+
+as raw tensors with `requires_grad=True`.
+
+Model equation
+--------------
+
+    prediction = x @ weight + bias
+
+Shape story
+-----------
+
+    x         shape (200, 1)
+    weight    shape (1, 1)
+    bias      shape (1,)
+    preds     shape (200, 1)
+
+Why `x @ weight` works:
+
+    (200, 1) @ (1, 1) -> (200, 1)
+
+Loss
+----
+We use mean squared error:
+
+    loss = mean((prediction - target)^2)
+
+Backpropagation flow
+--------------------
+
+    weight,bias -> predictions -> loss
+         ^                        |
+         |                        v
+      update <---- gradients from backward()
+
+Why `torch.no_grad()` is used
+-----------------------------
+The parameter update is bookkeeping, not part of the model's forward computation.
+So we write:
+
+    with torch.no_grad():
+        weight -= lr * weight.grad
+        bias -= lr * bias.grad
+
+If you do not disable tracking here, PyTorch may try to treat the update itself
+as part of the graph.
+
+Why zero gradients
+------------------
+PyTorch accumulates gradients in `.grad`.
+So after each update:
+
+    weight.grad.zero_()
+    bias.grad.zero_()
+
+Key lesson
+----------
+This script shows the real mechanics under the hood of `nn.Linear` training.
+
+Exercises
+---------
+1. Print `weight.grad` and `bias.grad` every 10 epochs.
+2. Change the learning rate from `0.05` to `0.005`.
+3. Change the target line in the data generator.
+
+Self-check questions
+--------------------
+1. Why does `weight` need `requires_grad=True`?
+2. Why does `bias` broadcast over every row?
+3. Why do we update inside `no_grad`?

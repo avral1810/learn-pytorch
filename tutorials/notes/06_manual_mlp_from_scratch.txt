@@ -1,0 +1,68 @@
+Lesson 06: Manual MLP From Scratch
+==================================
+
+Goal
+----
+Build a small neural network using only raw parameter tensors.
+
+Architecture
+------------
+
+    input (2)
+      -> hidden (16)
+      -> output (2)
+
+Parameters
+----------
+
+    w1 shape (2, 16)
+    b1 shape (16,)
+    w2 shape (16, 2)
+    b2 shape (2,)
+
+Forward pass
+------------
+
+    hidden_pre = x @ w1 + b1
+    hidden = relu(hidden_pre)
+    logits = hidden @ w2 + b2
+
+What ReLU does
+--------------
+
+    relu(z) = max(0, z)
+
+It introduces nonlinearity.
+Without it, multiple linear layers would still behave like one linear layer.
+
+Why this is powerful
+--------------------
+The hidden layer lets the network build internal features before classification.
+
+Cross-entropy
+-------------
+The output has two logits:
+- score for class 0
+- score for class 1
+
+`F.cross_entropy` compares those logits with the integer class labels.
+
+Key lesson
+----------
+This script is the bridge between:
+- simple linear models
+- deeper neural networks
+
+It also shows that `nn.Module` is convenient, but not magical.
+
+Exercises
+---------
+1. Print shapes for `hidden_pre`, `hidden`, and `logits`.
+2. Change hidden size from 16 to 32.
+3. Replace ReLU with `torch.tanh` and compare training.
+
+Self-check questions
+--------------------
+1. Why do we need a hidden layer here?
+2. Why does `b1` broadcast across the batch?
+3. Why are the outputs called logits?

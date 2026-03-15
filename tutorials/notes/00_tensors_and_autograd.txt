@@ -1,0 +1,114 @@
+Lesson 00: Tensors and Autograd
+================================
+
+Goal
+----
+Understand the two building blocks that appear in nearly every PyTorch project:
+1. tensors
+2. automatic differentiation (autograd)
+
+What is a tensor?
+-----------------
+A tensor is a container for numbers with a shape.
+
+Examples:
+- scalar:      shape ()
+- vector:      shape (3,)
+- matrix:      shape (2, 2)
+- image batch: shape (batch, channels, height, width)
+
+In the script:
+
+    x = [[1, 2],
+         [3, 4]]
+
+    y = [[5, 6],
+         [7, 8]]
+
+Diagram:
+
+    x shape = (2, 2)
+    y shape = (2, 2)
+
+    x + y =
+    [[ 6,  8],
+     [10, 12]]
+
+Elementwise addition means each position is added to the matching position.
+
+Matrix multiplication
+---------------------
+
+    x @ y
+
+uses rows of x and columns of y:
+
+    row(1,2) dot col(5,7) = 1*5 + 2*7 = 19
+    row(1,2) dot col(6,8) = 1*6 + 2*8 = 22
+
+So:
+
+    x @ y =
+    [[19, 22],
+     [43, 50]]
+
+Autograd intuition
+------------------
+PyTorch can track how a final loss depends on parameters.
+
+In the script:
+
+    w = 2.0
+    loss = (3*w - 9)^2
+
+Diagram:
+
+    w ----> (3*w) ----> (3*w - 9) ----> square ----> loss
+
+Autograd computes:
+
+    d(loss) / d(w)
+
+This tells us how to change w to reduce the loss.
+
+Training loop idea
+------------------
+
+    1. compute loss
+    2. call backward()
+    3. use gradient to update parameter
+    4. zero the gradient
+
+Diagram:
+
+    parameter -> prediction -> loss
+        ^                      |
+        |                      v
+      update <---- gradient from backward()
+
+Why zero gradients?
+-------------------
+PyTorch accumulates gradients by default.
+If you do not clear them, each step adds to the previous gradient.
+
+What to try next
+----------------
+- Change the starting value of w from 2.0 to -5.0
+- Change the learning rate from 0.1 to 0.01
+- Change the target equation from 3*w = 9 to 4*w = 20
+
+What success looks like
+-----------------------
+The printed value of w should move toward 3.0 and the loss should shrink.
+
+Exercises
+---------
+1. Start with `w = -2.0` and see how many steps it takes to move toward 3.0.
+2. Change the update rule to use learning rate `0.01` and compare convergence speed.
+3. Print `w.grad` before the parameter update each step.
+
+Self-check questions
+--------------------
+1. Why do we set `requires_grad=True` on `w` but not on `x` and `y`?
+2. Why is `loss.backward()` called before the update?
+3. Why is `w.grad.zero_()` needed?

@@ -1,0 +1,384 @@
+Lesson 01: Shapes, Reshape, Gradients, no_grad, and detach
+============================================================
+
+Goal
+----
+This lesson exists because the first real PyTorch barrier is not "training a model".
+It is understanding:
+- what a shape means
+- how tensors are rearranged
+- why some tensors track gradients
+- why some operations should not track gradients
+
+If these ideas are not clear, every later model will feel confusing.
+
+Part 1: What a shape means
+--------------------------
+Shape tells you how many elements live along each axis.
+
+Examples:
+
+    scalar                  shape ()
+    vector [1, 2, 3]        shape (3,)
+    matrix                  shape (2, 3)
+    image batch             shape (batch, channels, height, width)
+
+Example matrix:
+
+    [[1, 2, 3],
+     [4, 5, 6]]
+
+has shape:
+
+    (2, 3)
+
+because it has:
+- 2 rows
+- 3 columns
+
+Why shapes matter
+-----------------
+Almost every PyTorch error for beginners is a shape error.
+
+Typical examples:
+- wrong matrix multiplication dimensions
+- missing batch dimension
+- flattening too early or too late
+- labels with the wrong shape for the loss function
+
+Mental rule:
+
+    Every layer has input shape expectations.
+
+Part 2: reshape and view
+------------------------
+Suppose you have:
+
+    x = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11]
+
+This has shape:
+
+    (12,)
+
+You can reorganize the same 12 values into:
+
+    reshape(3, 4)
+
+which becomes:
+
+    [[ 0,  1,  2,  3],
+     [ 4,  5,  6,  7],
+     [ 8,  9, 10, 11]]
+
+Shape:
+
+    (3, 4)
+
+Important idea:
+
+    reshape changes the arrangement, not the values.
+
+When can you reshape?
+---------------------
+The total number of values must stay the same.
+
+Examples:
+
+    12 values -> (3, 4) works
+    12 values -> (2, 6) works
+    12 values -> (5, 5) fails
+
+because:
+
+    3 * 4 = 12
+    2 * 6 = 12
+    5 * 5 = 25
+
+What is view?
+-------------
+`view` is similar to `reshape`.
+For early learning, treat them as almost the same.
+
+The practical difference:
+- `view` requires a memory layout that is compatible
+- `reshape` is more flexible and often easier for beginners
+
+Beginner rule:
+
+    Prefer reshape unless you specifically need view.
+
+Part 3: unsqueeze and squeeze
+-----------------------------
+`unsqueeze(dim)` inserts a dimension of size 1.
+
+Example:
+
+    x shape = (12,)
+
+    x.unsqueeze(1) -> shape (12, 1)
+
+This is useful when a model expects a column dimension or a batch dimension.
+
+`squeeze(dim)` removes a dimension of size 1.
+
+Example:
+
+    shape (12, 1) -> squeeze(1) -> shape (12,)
+
+Very common use:
+- add batch dimension
+- remove batch dimension
+- add channel dimension for images
+
+Part 4: Broadcasting
+--------------------
+Broadcasting lets PyTorch combine tensors of different shapes
+when the shapes are compatible.
+
+Example:
+
+    matrix shape = (2, 3)
+    bias   shape = (3,)
+
+PyTorch treats the bias like this:
+
+    [[10, 20, 30],
+     [10, 20, 30]]
+
+without actually asking you to write that copy manually.
+
+Then:
+
+    [[1, 2, 3],      [[10, 20, 30],      [[11, 22, 33],
+     [4, 5, 6]]   +   [10, 20, 30]]   =   [14, 25, 36]]
+
+Why this matters
+----------------
+Many neural network operations rely on broadcasting:
+- adding bias terms
+- normalization operations
+- scaling tensors
+
+Part 5: Matrix multiplication
+-----------------------------
+This is one of the most important operations in neural networks.
+
+If:
+
+    A shape = (m, n)
+    B shape = (n, p)
+
+then:
+
+    A @ B shape = (m, p)
+
+The inside dimensions must match.
+
+Example:
+
+    A shape = (2, 2)
+    B shape = (2, 2)
+
+then:
+
+    A @ B shape = (2, 2)
+
+Neural network connection
+-------------------------
+A linear layer is basically matrix multiplication plus bias:
+
+    output = input @ weight.T + bias
+
+That is why shape understanding is essential.
+
+Part 6: What does requires_grad mean?
+-------------------------------------
+When `requires_grad=True`, PyTorch tracks operations involving that tensor
+so it can later compute derivatives.
+
+Example:
+
+    w = tensor(2.0, requires_grad=True)
+    y = w * 4
+    loss = (y - 11)^2
+
+PyTorch builds a computation graph:
+
+    w -> multiply by 4 -> subtract 11 -> square -> loss
+
+Later, calling:
+
+    loss.backward()
+
+tells PyTorch:
+
+    compute d(loss)/d(w)
+
+and store it in:
+
+    w.grad
+
+Why gradients matter
+--------------------
+The gradient tells you how changing a parameter changes the loss.
+
+Intuition:
+- positive gradient: increasing the parameter increases loss
+- negative gradient: increasing the parameter decreases loss
+- large magnitude: the loss is very sensitive to that parameter
+
+Part 7: Why does backward() store into .grad?
+---------------------------------------------
+PyTorch separates:
+- the tensor value, for example `w`
+- the gradient of the loss with respect to that tensor, `w.grad`
+
+This is useful because optimizers need the current parameter values and
+their gradients at the same time.
+
+Training loop pattern:
+
+    loss.backward()
+    optimizer.step()
+    optimizer.zero_grad()
+
+Meaning:
+- `backward()` computes gradients
+- `step()` updates parameters using those gradients
+- `zero_grad()` clears accumulated gradients
+
+Part 8: Why do gradients accumulate?
+------------------------------------
+PyTorch adds new gradients to existing `.grad` values by default.
+
+Example:
+
+    loss1.backward()
+    loss2.backward()
+
+After this, `.grad` contains contributions from both backward passes.
+
+That behavior is useful in some advanced cases, but for standard training
+you usually want fresh gradients each step.
+
+That is why we clear gradients every iteration.
+
+Part 9: What is torch.no_grad()?
+--------------------------------
+`torch.no_grad()` temporarily tells PyTorch:
+
+    do not build a computation graph for these operations
+
+Why would we want that?
+-----------------------
+Because some operations are not part of learning.
+
+Typical examples:
+- parameter updates
+- evaluation/inference
+- copying values for logging
+
+Example:
+
+    with torch.no_grad():
+        w -= learning_rate * w.grad
+
+Why use it for parameter updates?
+---------------------------------
+Because the update itself is not something we want to differentiate through.
+
+We want gradients for:
+
+    loss with respect to model parameters
+
+We do not want gradients for:
+
+    the bookkeeping step that changes the parameter values
+
+Without `no_grad`, PyTorch may try to track update operations as part of the graph,
+which is usually not what you want in a basic training loop.
+
+Part 10: What is detach()?
+--------------------------
+`detach()` creates a tensor that shares the same data value but is disconnected
+from the computation graph.
+
+If:
+
+    y = w * 5
+
+then:
+
+    detached = y.detach()
+
+means:
+- `detached` has the same numeric value as `y`
+- `detached` does not remember how it came from `w`
+- gradients will not flow back through `detached`
+
+When is detach useful?
+----------------------
+- logging intermediate values
+- converting model outputs for analysis
+- stopping gradient flow intentionally
+- target networks and advanced training tricks later
+
+Difference between no_grad and detach
+-------------------------------------
+`no_grad`:
+- affects operations performed inside a block
+- says "do not track these new operations"
+
+`detach`:
+- acts on an existing tensor
+- says "make a non-gradient-tracking version of this tensor"
+
+Short version:
+
+    no_grad -> stop tracking future ops in a block
+    detach  -> cut this tensor off from its history
+
+Part 11: Why shape and gradient ideas belong together
+-----------------------------------------------------
+In real models, most debugging comes from two families of problems:
+- shape mismatch
+- wrong gradient tracking
+
+Examples:
+- tensor on wrong device
+- tensor has wrong rank
+- forgot batch dimension
+- updated parameters without no_grad
+- detached something accidentally
+- called backward on a value that does not require grad
+
+If you master these basics, later topics become much easier:
+- MLPs
+- CNNs
+- Transformers
+
+Exercises
+---------
+1. Create `torch.arange(24).reshape(2, 3, 4)` and print its shape.
+2. Turn a vector of shape `(5,)` into `(5, 1)` using `unsqueeze`.
+3. Add a bias vector of shape `(3,)` to a matrix of shape `(4, 3)` and inspect the result.
+4. Create a scalar parameter with `requires_grad=True`, define a loss, call `backward()`, and print `.grad`.
+5. Repeat the same computation inside `torch.no_grad()` and inspect `requires_grad`.
+6. Create a tensor from a graph and compare `y.requires_grad` versus `y.detach().requires_grad`.
+
+Self-check questions
+--------------------
+1. Why can `(12,)` be reshaped to `(3, 4)` but not `(5, 5)`?
+2. What does `requires_grad=True` tell PyTorch to do?
+3. Where does PyTorch store the derivative after `backward()`?
+4. Why do we often use `torch.no_grad()` during parameter updates?
+5. What is the difference between `detach()` and `no_grad()`?
+6. Why is broadcasting useful in neural networks?
+
+What success looks like
+-----------------------
+After this lesson, you should be able to:
+- read a tensor shape and say what each axis means
+- predict the output shape of simple reshape/pooling/matmul operations
+- explain where gradients come from
+- explain why some computations should not be tracked
