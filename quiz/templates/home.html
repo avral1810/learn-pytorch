@@ -1,0 +1,31 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>PyTorch Chapters</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
+  </head>
+  <body class="chapter-site">
+    <main class="chapter-home">
+      <section class="hero-panel">
+        <p class="eyebrow">Local Course Website</p>
+        <h1>PyTorch Chapters</h1>
+        <p class="hero-copy">Read the chapter in the browser, inspect the linked script or PDF if you want, then solve the matching coding quiz on the same page.</p>
+      </section>
+
+      <section class="chapter-grid">
+        {% for chapter in chapters %}
+        <article class="chapter-card">
+          <img src="{{ url_for('chapter_assets', filename=chapter.image) }}" alt="{{ chapter.title }}" class="chapter-card-image">
+          <p class="lesson-tag">Chapter {{ chapter.number }}</p>
+          <h2>{{ chapter.title }}</h2>
+          <p>{{ chapter.summary }}</p>
+          <p class="card-meta">{{ chapter.question_count }} quiz question{% if chapter.question_count != 1 %}s{% endif %}</p>
+          <a class="card-link" href="{{ url_for('chapter_page', chapter_id=chapter.id) }}">Open Chapter</a>
+        </article>
+        {% endfor %}
+      </section>
+    </main>
+  </body>
+</html>

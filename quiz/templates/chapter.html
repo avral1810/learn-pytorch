@@ -1,0 +1,91 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Chapter {{ chapter.number }} - {{ chapter.title }}</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/codemirror.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/theme/material.min.css">
+  </head>
+  <body class="chapter-site">
+    <div class="chapter-shell">
+      <aside class="sidebar">
+        <a class="back-link" href="{{ url_for('index') }}">All Chapters</a>
+        <p class="eyebrow">Chapter {{ chapter.number }}</p>
+        <h1>{{ chapter.title }}</h1>
+        <p class="sidebar-copy">{{ chapter.summary }}</p>
+        <div class="nav-stack">
+          {% if chapter.previous_chapter %}<a class="nav-chip" href="{{ url_for('chapter_page', chapter_id=chapter.previous_chapter) }}">Previous Chapter</a>{% endif %}
+          {% if chapter.next_chapter %}<a class="nav-chip" href="{{ url_for('chapter_page', chapter_id=chapter.next_chapter) }}">Next Chapter</a>{% endif %}
+        </div>
+      </aside>
+
+      <main class="chapter-main">
+        <section class="lesson-panel">
+          <div class="lesson-top">
+            <div>
+              <p class="lesson-tag">{{ chapter.lesson }}</p>
+              <h2>Lesson Page</h2>
+            </div>
+            <div class="resource-links">
+              <a href="/{{ chapter.script_path }}">Tutorial Script</a>
+              <a href="/{{ chapter.pdf_path }}">Chapter PDF</a>
+            </div>
+          </div>
+
+          <img src="{{ url_for('chapter_assets', filename=chapter.image) }}" alt="{{ chapter.title }}" class="chapter-hero-image">
+
+          {% for section in chapter.sections %}
+            {% if section.type == "paragraph" %}
+            <p class="lesson-paragraph">{{ section.content }}</p>
+            {% elif section.type == "list" %}
+            <section class="lesson-section"><h3>{{ section.title }}</h3><ul>{% for item in section.items %}<li>{{ item }}</li>{% endfor %}</ul></section>
+            {% elif section.type == "code" %}
+            <section class="lesson-section"><h3>{{ section.title }}</h3><pre class="lesson-code">{{ section.content }}</pre></section>
+            {% elif section.type == "callout" %}
+            <section class="lesson-callout"><h3>{{ section.title }}</h3><p>{{ section.content }}</p></section>
+            {% endif %}
+          {% endfor %}
+        </section>
+
+        <section class="quiz-panel" id="quiz-app">
+          <div class="quiz-header">
+            <div>
+              <p class="eyebrow">Chapter Quiz</p>
+              <h2 id="question-title">Loading quiz...</h2>
+            </div>
+            <div class="button-row">
+              <button id="prev-question" class="action-button ghost">Previous</button>
+              <button id="next-question" class="action-button ghost">Next</button>
+              <button id="run-button" class="action-button secondary">Run</button>
+              <button id="submit-button" class="action-button primary">Submit</button>
+              <button id="reset-button" class="action-button ghost">Reset</button>
+            </div>
+          </div>
+
+          <p id="question-prompt" class="question-prompt"></p>
+          <div class="example-box">
+            <h3>Visible Checks</h3>
+            <ul id="visible-examples"></ul>
+          </div>
+
+          <section class="editor-panel"><textarea id="code-editor"></textarea></section>
+
+          <section class="results-panel">
+            <div class="results-grid">
+              <div class="result-card"><h3>Summary</h3><div id="summary-output" class="result-output"></div></div>
+              <div class="result-card"><h3>Stdout</h3><pre id="stdout-output" class="result-output"></pre></div>
+              <div class="result-card"><h3>Stderr</h3><pre id="stderr-output" class="result-output"></pre></div>
+            </div>
+          </section>
+        </section>
+      </main>
+    </div>
+
+    <script>window.__CHAPTER_DATA__ = {{ chapter|tojson }};</script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/codemirror.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/mode/python/python.min.js"></script>
+    <script src="{{ url_for('static', filename='app.js') }}"></script>
+  </body>
+</html>
