@@ -41,9 +41,9 @@ LESSON_IMAGES = {
         "source": "https://commons.wikimedia.org/wiki/File:Linear_Regression_Plot.png",
     },
     "03_linear_regression_with_nn_module": {
-        "path": ASSETS_DIR / "01_linear_regression_plot.png",
-        "caption": "Linear regression plot",
-        "source": "https://commons.wikimedia.org/wiki/File:Linear_Regression_Plot.png",
+        "path": ASSETS_DIR / "03_linear_regression.svg",
+        "caption": "Linear regression diagram",
+        "source": "https://commons.wikimedia.org/wiki/File:Linear_regression.svg",
     },
     "04_logistic_regression_from_scratch": {
         "path": ASSETS_DIR / "04_logistic_curve.png",
@@ -61,9 +61,9 @@ LESSON_IMAGES = {
         "source": "https://commons.wikimedia.org/wiki/File:XOR_neural_network_2-2-1.jpg",
     },
     "07_basic_nn_mlp_with_nn_module": {
-        "path": ASSETS_DIR / "02_xor_neural_network.jpg",
-        "caption": "XOR neural network diagram",
-        "source": "https://commons.wikimedia.org/wiki/File:XOR_neural_network_2-2-1.jpg",
+        "path": ASSETS_DIR / "05_mlp_training_loop.svg",
+        "caption": "MLP training loop",
+        "source": "https://commons.wikimedia.org/wiki/File:MLP-training-loop.svg",
     },
     "08_cnn_basics": {
         "path": ASSETS_DIR / "03_convolutional_network.png",
@@ -94,6 +94,11 @@ LESSON_IMAGES = {
         "path": ASSETS_DIR / "06_microchip.jpg",
         "caption": "Chip photo for device-compute context",
         "source": "https://commons.wikimedia.org/wiki/File:Mac_Mini_M1_chip.jpg",
+    },
+    "14_basic_rnn_sequence_classifier": {
+        "path": ASSETS_DIR / "14_rnn_unfold.svg",
+        "caption": "Recurrent neural network unfold diagram",
+        "source": "https://commons.wikimedia.org/wiki/File:Recurrent_neural_network_unfold.svg",
     },
 }
 

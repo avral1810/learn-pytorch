@@ -47,13 +47,15 @@ python3 -c "import torch; print(torch.__version__); print(torch.backends.mps.is_
    Understand convolutions, pooling, and a tiny CNN.
 10. `09_vision_classifier.py`
    Train a CNN on generated image patterns and practice vision workflow.
-11. `10_lstm_sequence_classifier.py`
+11. `14_basic_rnn_sequence_classifier.py`
+   Learn the core recurrent-network idea with embeddings, hidden state, and a sequence classifier built from the final RNN summary.
+12. `10_lstm_sequence_classifier.py`
    Learn sequence modeling with embeddings, hidden state, and LSTM output shapes.
-12. `11_transformer_basics.py`
+13. `11_transformer_basics.py`
    Build a minimal Transformer encoder classifier.
-13. `12_toy_gan.py`
+14. `12_toy_gan.py`
    Learn generator-vs-discriminator training on a tiny 1D distribution.
-14. `13_device_cpu_to_mps.py`
+15. `13_device_cpu_to_mps.py`
    Learn how to move the same code from CPU to Apple Metal (`mps`).
 
 ## Suggested rhythm
@@ -72,6 +74,7 @@ python3 -c "import torch; print(torch.__version__); print(torch.backends.mps.is_
 - Neural nets: forward pass, activation functions, overfitting, train vs eval
 - CNNs: channels, kernels, feature maps, pooling
 - Sequence models: embeddings, hidden state, LSTM intuition
+- RNNs: recurrence, final hidden summaries, and sequence order
 - Vision: image tensors, augmentations, normalization, classifier pipeline
 - Transformers: embeddings, positional information, attention intuition
 - Generative models: GAN basics, adversarial training, `detach()` in practice

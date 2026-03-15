@@ -1,0 +1,133 @@
+Lesson 14: Basic RNN Sequence Classifier
+========================================
+
+Goal
+----
+Understand the core recurrent neural network idea before or alongside LSTMs.
+
+This lesson focuses on:
+- token embeddings
+- recurrent hidden state
+- sequence order
+- final hidden summary
+- RNN vs LSTM intuition
+
+Why start with a vanilla RNN
+----------------------------
+A vanilla RNN is simpler than an LSTM.
+
+It reads a sequence one step at a time and keeps updating a hidden state:
+
+    previous hidden state + current token -> new hidden state
+
+That hidden state is the running summary of the sequence so far.
+
+Pipeline
+--------
+
+    token ids -> embedding -> RNN -> final hidden state -> classifier
+
+Input and embedding shapes
+--------------------------
+Input tokens have shape:
+
+    (batch, seq_len)
+
+If batch size is 64 and sequence length is 10:
+
+    (64, 10)
+
+After an embedding layer with width 32:
+
+    (64, 10) -> (64, 10, 32)
+
+So each token position now has a learned feature vector.
+
+What the RNN returns
+--------------------
+The PyTorch call returns:
+
+    outputs, hidden_state = rnn(embedded)
+
+`outputs`
+---------
+Shape:
+
+    (batch, seq_len, hidden_size)
+
+This gives one output vector per time step.
+
+`hidden_state`
+--------------
+Shape:
+
+    (num_layers, batch, hidden_size)
+
+For a one-layer RNN:
+
+    hidden_state[-1]
+
+has shape:
+
+    (batch, hidden_size)
+
+That final hidden vector is often used as the sequence summary for classification.
+
+Why order matters
+-----------------
+The label rule in this lesson compares the average of the first half of the sequence
+with the average of the second half.
+
+So if you reorder the same token values, the label can change.
+
+That means the model must remember position through time, not just which tokens exist.
+
+Why RNNs struggle on long sequences
+-----------------------------------
+Vanilla RNNs are good for learning the basic recurrence idea, but they can struggle when
+important information must survive across many time steps.
+
+The reason is that gradients passed through many recurrent updates can:
+- shrink too much
+- grow too much
+
+This makes long-range learning unstable.
+
+That limitation is one reason LSTMs were invented.
+
+RNN vs LSTM
+-----------
+RNN:
+- one hidden state
+- simpler mental model
+- weaker long-range memory
+
+LSTM:
+- hidden state plus cell state
+- gates that control forgetting, writing, and reading memory
+- usually better for longer dependencies
+
+Why we still study RNNs
+-----------------------
+RNNs make the sequence idea easier to see:
+
+    one token comes in
+    hidden state updates
+    repeat until the end
+
+That is a very useful foundation before thinking about LSTMs or Transformers.
+
+Exercises
+---------
+1. Print the shapes of `embedded`, `outputs`, and `hidden_state`.
+2. Replace the final hidden state with `outputs[:, -1, :]` and compare results.
+3. Increase `hidden_size` from 32 to 64.
+4. Change the label rule so class 1 depends only on the first token.
+
+Self-check questions
+--------------------
+1. Why does an RNN care about sequence order?
+2. What is the difference between `outputs` and `hidden_state`?
+3. Why can `hidden_state[-1]` be used for sequence classification?
+4. Why do RNNs struggle more than LSTMs on longer dependencies?
+5. What is the main conceptual difference between an RNN and an LSTM?
