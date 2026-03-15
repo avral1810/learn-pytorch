@@ -26,7 +26,7 @@ Manual recurrence
 -----------------
 The update rule looks like:
 
-    h_t = tanh(x_t W_xh + h_{t-1} W_hh + b_h)
+    hₜ = tanh(xₜ W_xh + hₜ₋₁ W_hh + b_h)
 
 This is the core idea behind a vanilla RNN.
 
