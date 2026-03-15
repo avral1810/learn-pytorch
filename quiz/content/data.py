@@ -3,6 +3,60 @@ from __future__ import annotations
 from copy import deepcopy
 
 
+DEFAULT_SUBNAV_ITEMS = [
+    {"label": "Lesson", "href": "#lesson-top"},
+    {"label": "Recap", "href": "#recap"},
+    {"label": "Quiz", "href": "#quiz-app"},
+]
+
+DEFAULT_RESOURCE_BUTTONS = [
+    {"id": "open-tutorial-drawer", "label": "Open Tutorial", "kind": "button", "action": "open-tutorial-drawer"},
+    {"id": "open-pdf-drawer", "label": "Open PDF", "kind": "button", "action": "open-pdf-drawer"},
+]
+
+DEFAULT_QUIZ_NAV_BUTTONS = [
+    {"id": "prev-question", "label": "Previous", "variant": "ghost", "action": "previous-question"},
+    {"id": "next-question", "label": "Next", "variant": "ghost", "action": "next-question"},
+]
+
+DEFAULT_QUIZ_EDITOR_BUTTONS = [
+    {"id": "run-button", "label": "Run", "variant": "secondary", "action": "run-code"},
+    {"id": "submit-button", "label": "Submit", "variant": "primary", "action": "submit-code"},
+    {"id": "hint-button-global", "label": "Hint", "variant": "ghost", "action": "show-hint"},
+    {"id": "reset-button", "label": "Reset", "variant": "ghost", "action": "reset-question"},
+    {"id": "next-question-inline", "label": "Next", "variant": "primary", "action": "next-question", "hidden": True},
+]
+
+DEFAULT_RESULT_PANELS = [
+    {"title": "Summary", "id": "summary-output", "tag": "div", "class_name": "result-output"},
+    {"title": "Stdout", "id": "stdout-output", "tag": "pre", "class_name": "result-output"},
+    {"title": "Stderr", "id": "stderr-output", "tag": "pre", "class_name": "result-output"},
+]
+
+DEFAULT_PLAYGROUND_BUTTONS = [
+    {"id": "run-playground-button", "label": "Run", "variant": "secondary", "action": "run-playground"},
+    {"id": "reset-playground-button", "label": "Reset", "variant": "ghost", "action": "reset-playground"},
+]
+
+DEFAULT_PLAYGROUND_RESULT_PANELS = [
+    {"title": "Playground Stdout", "id": "playground-stdout", "tag": "pre", "class_name": "result-output"},
+    {"title": "Playground Stderr", "id": "playground-stderr", "tag": "pre", "class_name": "result-output"},
+]
+
+DEFAULT_CHAPTER_UI = {
+    "subnav_items": DEFAULT_SUBNAV_ITEMS,
+    "resource_buttons": DEFAULT_RESOURCE_BUTTONS,
+    "quiz_nav_buttons": DEFAULT_QUIZ_NAV_BUTTONS,
+    "quiz_editor_buttons": DEFAULT_QUIZ_EDITOR_BUTTONS,
+    "result_panels": DEFAULT_RESULT_PANELS,
+    "playground_buttons": DEFAULT_PLAYGROUND_BUTTONS,
+    "playground_result_panels": DEFAULT_PLAYGROUND_RESULT_PANELS,
+    "question_prompt_title": "Visible Checks",
+    "answer_editor_title": "Your Answer",
+    "answer_editor_note": "Write the code for this question here",
+}
+
+
 CHAPTERS = [
     {
         "id": "00",
@@ -511,7 +565,187 @@ CHAPTERS = [
 ]
 
 
-CHAPTERS_BY_ID = {chapter["id"]: chapter for chapter in CHAPTERS}
+EXTRA_CHAPTER_SECTIONS = {
+    "01": [
+        {"type": "paragraph", "content": "A deeper way to think about shape is that every dimension should have a job description. In beginner code, many bugs happen because numbers exist in the tensor but the programmer no longer remembers which axis means batch, which axis means feature, and which axis means space or time."},
+        {"type": "list", "title": "Dimension naming habit", "items": ["For tabular data, read `(batch, features)` as `how many examples, how many numbers per example`.", "For images, read `(batch, channels, height, width)`.", "For sequences, read `(batch, seq_len, features)` when `batch_first=True`.", "If you cannot name each axis in words, you probably do not fully understand the shape yet."]},
+        {"type": "code", "title": "Annotating shapes in code comments", "content": "x = torch.randn(32, 10)   # 32 examples, 10 features each\nweight = torch.randn(10, 4)  # map 10 features to 4 outputs\ny = x @ weight   # shape (32, 4)"},
+        {"type": "paragraph", "content": "Notice that matrix multiplication is really a statement about matching meanings. The last dimension of the left tensor and the first relevant dimension of the right tensor must agree because they describe the same feature space from two perspectives."},
+        {"type": "math", "title": "Matrix Multiplication Shape Rule", "content": "(a, b) @ (b, c) -> (a, c)\n\nThe inner dimensions must match.\nThe outer dimensions remain."},
+        {"type": "paragraph", "content": "That one rule appears everywhere in neural networks. A linear layer with `in_features=10` expects the input's last dimension to be 10. If you accidentally reshape the input to `(320,)` instead of `(32, 10)`, the values still exist but the feature meaning is destroyed."},
+        {"type": "code", "title": "Broadcasting with explicit singleton dimensions", "content": "x = torch.tensor([[1.0, 2.0, 3.0], [4.0, 5.0, 6.0]])\nbias = torch.tensor([[10.0, 20.0, 30.0]])   # shape (1, 3)\nprint((x + bias).shape)   # (2, 3)"},
+        {"type": "paragraph", "content": "Using explicit singleton dimensions is often clearer than relying on implicit broadcasting. It makes the intended expansion visible. In more complex code, that clarity is worth the extra character count."},
+        {"type": "math", "title": "Broadcasting Compatibility Rule", "content": "Compare dimensions from right to left.\nTwo dimensions are compatible if:\n1. they are equal, or\n2. one of them is 1"},
+        {"type": "paragraph", "content": "The value `-1` in `reshape` is also worth a more precise explanation. It means 'infer this dimension from the remaining number of elements.' It does not mean 'any size is okay'. The total number of elements must still match exactly."},
+        {"type": "code", "title": "When reshape with -1 works and fails", "content": "x = torch.arange(12)\nprint(x.reshape(3, -1).shape)   # (3, 4)\n# x.reshape(5, -1) would fail because 12 cannot be split into 5 equal rows"},
+        {"type": "callout", "title": "Torchvision shape preview", "content": "Later, `torchvision` image pipelines will often produce tensors like `(C, H, W)` for one image and `(N, C, H, W)` for a batch. The shape habits you build here transfer directly into those computer-vision workflows."},
+    ],
+    "02": [
+        {"type": "paragraph", "content": "Linear regression deserves more mathematical precision because it is the first place where optimization, gradients, and model structure all meet in one simple formula."},
+        {"type": "math", "title": "Linear Regression Model In Math", "content": "For one feature x:\nŷ = wx + b\n\nFor a batch X:\nŶ = XW + b"},
+        {"type": "paragraph", "content": "For one-feature regression, `w` controls slope and `b` controls intercept. If `w` is positive, larger inputs tend to produce larger predictions. If `w` is negative, larger inputs tend to produce smaller predictions. The bias shifts the line vertically without changing its slope."},
+        {"type": "code", "title": "Slope and intercept intuition", "content": "x = torch.tensor([[0.0], [1.0], [2.0]])\nweight = torch.tensor([[2.0]])\nbias = torch.tensor([1.0])\nprint(x @ weight + bias)   # [[1.0], [3.0], [5.0]]"},
+        {"type": "math", "title": "Residual And Squared Error", "content": "residual_i = ŷ_i - y_i\nsquared_error_i = (ŷ_i - y_i)^2\nMSE = (1/n) Σ_i (ŷ_i - y_i)^2"},
+        {"type": "paragraph", "content": "Squaring the residual has two effects. First, it removes the sign, so underprediction and overprediction both count as errors. Second, it magnifies large mistakes, which makes the loss care more strongly about outliers."},
+        {"type": "math", "title": "Derivative Of MSE With Respect To Prediction", "content": "For one example:\nL = (ŷ - y)^2\n\ndL/dŷ = 2(ŷ - y)"},
+        {"type": "paragraph", "content": "That derivative explains why the sign of the residual matters. If the prediction is too high, `ŷ - y` is positive, so the gradient pushes the model downward. If the prediction is too low, the gradient pushes upward."},
+        {"type": "code", "title": "Tiny hand-computed example", "content": "x = 2\ny = 5\nw = 1\nb = 0\npred = w*x + b = 2\nresidual = pred - y = -3\nsquared error = 9"},
+        {"type": "paragraph", "content": "Since the prediction is below the target in that example, the parameters should update in a direction that increases the future prediction. Even before seeing exact gradient numbers, you can often reason about the direction qualitatively."},
+        {"type": "math", "title": "Learning Rate Tradeoff", "content": "Update rule:\nw <- w - η * dL/dw\nb <- b - η * dL/db\n\nSmall η: slow but stable\nLarge η: fast but can overshoot"},
+        {"type": "callout", "title": "Why linear regression still matters later", "content": "Later models add layers, nonlinearities, and richer data types, but the core training pattern does not change. You still compute predictions, compare them to targets, backpropagate a loss, and update parameters."},
+    ],
+    "03": [
+        {"type": "paragraph", "content": "Once you move to `nn.Module`, there are really two different abstractions to understand: the module abstraction and the optimizer abstraction. Learning both clearly now makes later model code much less mysterious."},
+        {"type": "list", "title": "What lives where", "items": ["The module stores trainable layers.", "The loss function computes a differentiable scalar objective.", "The optimizer knows how to update the module's parameters.", "The dataloader decides how training examples are batched and shuffled."]},
+        {"type": "code", "title": "Equivalent low-level picture", "content": "model = nn.Linear(1, 1)\nfor name, param in model.named_parameters():\n    print(name, param.shape)\n# You will still see weight and bias tensors."},
+        {"type": "paragraph", "content": "That output is the best reminder that the high-level API has not changed the mathematics. It has only changed the bookkeeping. The same weight and bias still exist; they are just owned by the module object."},
+        {"type": "math", "title": "Mini-Batch Training Objective", "content": "For batch B:\nL_B = (1/|B|) Σ_{i in B} (ŷ_i - y_i)^2"},
+        {"type": "paragraph", "content": "Batching means the gradient at each step reflects the average behavior of multiple examples at once. This is usually more stable than updating from one example at a time and much cheaper than recomputing gradients on the full dataset every step."},
+        {"type": "code", "title": "Manual mental expansion of optimizer.step()", "content": "for parameter in model.parameters():\n    parameter -= lr * parameter.grad\n# Real optimizers may keep extra state, but this is the core idea."},
+        {"type": "paragraph", "content": "When you graduate from SGD to Adam or other optimizers, the principle is still the same: use gradient information to decide how parameters should move. The main difference is how the step size and direction are adjusted."},
+        {"type": "math", "title": "Why zero_grad Matters", "content": "PyTorch accumulates gradients:\ngrad_total = grad_old + grad_new\n\nSo you clear old gradients before computing a fresh step."},
+        {"type": "paragraph", "content": "This accumulation behavior is powerful in some advanced setups, but in beginner mini-batch training it is usually just a source of bugs when forgotten. That is why `optimizer.zero_grad()` appears almost mechanically in training loops."},
+        {"type": "callout", "title": "Dataset and DataLoader preview", "content": "This pattern generalizes directly to real datasets later, including `torchvision.datasets` for image work. The same idea of `dataset -> dataloader -> mini-batch loop` stays constant across many PyTorch projects."},
+    ],
+    "04": [
+        {"type": "paragraph", "content": "Logistic regression is one of the first places where the distinction between score, probability, and class label really matters. Being precise about those three layers of meaning will save you time later."},
+        {"type": "math", "title": "Logit, Probability, Class", "content": "logit z = xW + b\nprobability p = σ(z) = 1 / (1 + e^{-z})\nclass prediction = 1 if p >= 0.5 else 0"},
+        {"type": "paragraph", "content": "A logit is not bounded. It can be negative, positive, or zero. Sigmoid maps that real-valued score into a probability-like number between 0 and 1. Thresholding finally converts that probability into a hard decision."},
+        {"type": "math", "title": "Why Sigmoid Is Smooth", "content": "σ'(z) = σ(z)(1 - σ(z))"},
+        {"type": "paragraph", "content": "That derivative matters because it makes sigmoid compatible with gradient descent. A hard threshold is not useful inside training because it kills the smooth gradient information you need for optimization."},
+        {"type": "code", "title": "Reading several logits", "content": "logits = torch.tensor([[-3.0], [-1.0], [0.0], [1.0], [3.0]])\nprobs = torch.sigmoid(logits)\nprint(probs)"},
+        {"type": "paragraph", "content": "Notice the pattern: large negative logit means strong class-0 confidence, large positive logit means strong class-1 confidence, and zero means the model is exactly undecided with probability 0.5."},
+        {"type": "math", "title": "Binary Cross-Entropy Breakdown", "content": "If y = 1:\nL = -log(p)\n\nIf y = 0:\nL = -log(1 - p)"},
+        {"type": "paragraph", "content": "That breakdown makes BCE easier to remember. The loss always asks the model to place high probability on the correct class. If the label is 1, the model is rewarded for making `p` large. If the label is 0, it is rewarded for making `p` small."},
+        {"type": "code", "title": "Why confident wrong predictions hurt", "content": "p_good = torch.tensor([0.95])\np_bad = torch.tensor([0.05])\n# If the true label is 1, -log(0.95) is small but -log(0.05) is large"},
+        {"type": "paragraph", "content": "That is the main behavioral advantage of BCE over plain squared error for binary classification. It punishes confident wrong decisions very strongly, which is exactly what you want from a classification loss."},
+        {"type": "callout", "title": "Torchvision connection", "content": "Later, when you classify images from `torchvision` datasets, the last stage still reduces to logits, probabilities, and labels. The scale of the data changes, but this binary-classification logic remains useful."},
+    ],
+    "05": [
+        {"type": "paragraph", "content": "This chapter is really about separation of responsibilities. The model produces logits. The loss interprets those logits during training. Evaluation code interprets them later for human-readable probabilities or class decisions."},
+        {"type": "list", "title": "Three separate stages", "items": ["Model forward pass: returns raw logits.", "Training loss: consumes logits directly with `BCEWithLogitsLoss`.", "Evaluation step: optionally applies sigmoid and thresholding."]},
+        {"type": "math", "title": "Why BCEWithLogitsLoss Exists", "content": "Instead of computing:\np = sigmoid(z)\nL = BCE(p, y)\n\nPyTorch uses a numerically stable combined form."},
+        {"type": "paragraph", "content": "The stability point matters because computing sigmoid and logs separately can become numerically fragile when logits are very large in magnitude. `BCEWithLogitsLoss` packages the same idea in a safer implementation."},
+        {"type": "code", "title": "Correct evaluation flow", "content": "logits = model(x)\nprobs = torch.sigmoid(logits)\npreds = (probs >= 0.5).float()"},
+        {"type": "paragraph", "content": "It is fine to apply sigmoid during evaluation. The mistake is applying sigmoid inside `forward()` and then also using `BCEWithLogitsLoss` during training. That would effectively mix two incompatible interpretations of the same output."},
+        {"type": "math", "title": "Shape Contract Again", "content": "If logits shape is (batch, 1),\nthen labels should usually also be (batch, 1)."},
+        {"type": "paragraph", "content": "This shape alignment looks like a small detail, but it is one of the most common sources of early classification bugs. A mismatch between `(batch,)` and `(batch, 1)` can lead to confusing behavior or loss errors."},
+        {"type": "code", "title": "Making labels match logits", "content": "labels = labels.float().unsqueeze(1)\nloss = loss_fn(logits, labels)"},
+        {"type": "paragraph", "content": "Converting labels to float also matters because BCE-style losses are defined over numeric targets in the same general value space as probabilities and logits, not over integer class ids in the same way as cross-entropy."},
+        {"type": "callout", "title": "Practical rule for binary classifiers", "content": "If you are using one output logit for binary classification, your default checklist should be: logits from the model, `BCEWithLogitsLoss` during training, sigmoid only when interpreting outputs."},
+    ],
+    "06": [
+        {"type": "paragraph", "content": "A deeper geometric way to think about this MLP is that the hidden layer is creating a new feature space where the XOR-like pattern becomes easier to separate."},
+        {"type": "math", "title": "Two-Layer Network As Function Composition", "content": "f(x) = W_2 * ReLU(W_1 x + b_1) + b_2"},
+        {"type": "paragraph", "content": "That composition matters. The first affine map rotates and stretches the input space. ReLU then clips parts of that transformed space. The second affine map combines those clipped features into class scores."},
+        {"type": "code", "title": "Why XOR-like data is nonlinear", "content": "# class 1 when x1 and x2 have the same sign\n# class 0 when they have different signs\n# no single straight line separates those two groups cleanly"},
+        {"type": "paragraph", "content": "This is why chapter 06 is such an important milestone. It is the first clear example where a linear model is insufficient but a small neural network can succeed."},
+        {"type": "math", "title": "Logits To Softmax Probabilities", "content": "softmax(z)_k = exp(z_k) / Σ_j exp(z_j)"},
+        {"type": "paragraph", "content": "Although `F.cross_entropy` handles this internally, it helps to remember that the two output logits are really competing scores. Increasing the correct class logit relative to the other one reduces the loss."},
+        {"type": "code", "title": "Hidden activation inspection", "content": "hidden_pre = x @ w1 + b1\nhidden = relu(hidden_pre)\nprint(hidden[:5])"},
+        {"type": "paragraph", "content": "Inspecting hidden activations can teach you a lot. If every hidden unit is zero for many examples, the model may be underpowered or poorly initialized. If different units activate in different regions of the plane, you can start to see learned feature specialization."},
+        {"type": "math", "title": "Why ReLU Helps Optimization", "content": "ReLU(z) = max(0, z)\n\nPositive region: derivative 1\nNegative region: derivative 0"},
+        {"type": "paragraph", "content": "Compared with squashing activations everywhere, ReLU keeps a large linear region on the positive side. That often makes optimization easier in practice, especially in deeper networks."},
+        {"type": "callout", "title": "From-scratch skill transfer", "content": "If you can write this MLP from raw tensors, later abstractions like `nn.Sequential` stop looking magical. You already know what layers, biases, activations, logits, and parameter updates really are."},
+    ],
+    "07": [
+        {"type": "paragraph", "content": "This chapter is also a good place to start thinking in terms of reusable architecture blocks. `Linear -> ReLU -> Linear -> ReLU -> Linear` is a miniature version of the same design style used in much larger models."},
+        {"type": "math", "title": "Network Depth And Expressivity", "content": "More hidden layers + nonlinearities\nusually mean more expressive functions,\nnot just more parameters."},
+        {"type": "paragraph", "content": "Depth matters because each hidden layer can build on the features produced by the previous layer. The second hidden layer does not see raw input coordinates directly; it sees learned features from the first hidden layer."},
+        {"type": "code", "title": "Reading logits and probabilities separately", "content": "logits = model(batch_x)\nprobs = torch.softmax(logits, dim=1)\npreds = logits.argmax(dim=1)"},
+        {"type": "paragraph", "content": "Even though `CrossEntropyLoss` wants logits, softmax can still be useful during analysis. It lets you inspect how strongly the model prefers one class over another. Just do not feed the softmax output back into the loss."},
+        {"type": "math", "title": "Accuracy And Loss Can Move Differently", "content": "Accuracy depends only on the top class.\nCross-entropy depends on the confidence distribution."},
+        {"type": "paragraph", "content": "This means a model can keep the same accuracy while the loss improves, because it is becoming more confident on examples it already gets right. Conversely, a few changed decisions can move accuracy without a huge loss change."},
+        {"type": "code", "title": "Inspecting one batch during training", "content": "for batch_x, batch_y in train_loader:\n    logits = model(batch_x)\n    print(batch_x.shape, logits.shape, batch_y.shape)\n    break"},
+        {"type": "paragraph", "content": "That kind of one-batch inspection is one of the best debugging habits for neural nets. Before chasing optimizer issues, first verify that your batch shapes and target shapes are exactly what you think they are."},
+        {"type": "callout", "title": "Torchvision pattern preview", "content": "The `dataset -> DataLoader -> model -> loss -> optimizer` pattern here is the same pattern you will later use with `torchvision.datasets.MNIST`, `FashionMNIST`, or CIFAR-style image datasets."},
+    ],
+    "08": [
+        {"type": "paragraph", "content": "A more detailed way to understand convolution is to think of each output location as a local dot product between a learned filter and a small input patch."},
+        {"type": "math", "title": "One Convolution Output Cell", "content": "output[i, j] = Σ_{u,v,c} input[c, i+u, j+v] * kernel[c, u, v] + bias"},
+        {"type": "paragraph", "content": "That local dot-product view explains why convolutions respect image structure. The same filter is reused at many spatial locations, so the model can learn 'look for this pattern anywhere in the image' rather than memorizing one absolute position."},
+        {"type": "code", "title": "Thinking about channels", "content": "# grayscale image: channels = 1\n# RGB image: channels = 3\n# later feature maps may have 8, 16, 32, or more channels"},
+        {"type": "paragraph", "content": "Channels are not the same as classes. They are internal feature maps. Each channel can be thought of as one learned detector's activation map across the image."},
+        {"type": "math", "title": "Second Convolution Parameter Count", "content": "Each filter has shape 8 x 3 x 3 = 72 weights.\nWith 16 output channels: 16 x 72 = 1152 weights.\nPlus 16 biases.\nTotal = 1168 parameters."},
+        {"type": "paragraph", "content": "Notice how the second convolution already has many more parameters than the first because it receives 8 input channels instead of 1. This is another reason keeping track of channels matters."},
+        {"type": "code", "title": "Torchvision image convention", "content": "from torchvision import transforms\n# transforms.ToTensor() produces a tensor shaped like (C, H, W) for one image"},
+        {"type": "paragraph", "content": "This is where `torchvision` starts to matter. When you load real image datasets later, the transforms pipeline usually converts PIL images or arrays into tensors with channel-first ordering. The CNN shape rules from this chapter are exactly what make that data usable."},
+        {"type": "math", "title": "Flatten Size Derivation", "content": "After two pooling layers:\n28 -> 14 -> 7\nSo spatial size is 7 x 7.\nWith 16 channels:\n16 x 7 x 7 = 784"},
+        {"type": "paragraph", "content": "Writing this derivation explicitly is a good habit. It is much better to derive flatten sizes on paper or in comments than to guess and wait for a runtime shape error."},
+        {"type": "callout", "title": "Torchvision bridge", "content": "Real vision workflows with `torchvision` mostly add dataset loading, transforms, normalization, and augmentation. The CNN tensor reasoning itself is already here."},
+    ],
+    "09": [
+        {"type": "paragraph", "content": "This chapter becomes even more useful if you connect it mentally to the standard `torchvision` workflow. The synthetic dataset here is small and local, but the same training skeleton is what you will later use on real image datasets."},
+        {"type": "code", "title": "Typical torchvision dataset sketch", "content": "from torchvision import datasets, transforms\ntransform = transforms.Compose([\n    transforms.ToTensor(),\n])\ntrain_ds = datasets.MNIST(root='data', train=True, download=True, transform=transform)"},
+        {"type": "paragraph", "content": "`torchvision` adds two major things: real dataset objects and image transforms. `ToTensor()` converts images into tensors, `Normalize(...)` rescales channels, and augmentation transforms can perturb images during training to improve generalization."},
+        {"type": "list", "title": "Common torchvision transforms", "items": ["`transforms.ToTensor()` converts an image to a tensor.", "`transforms.Normalize(mean, std)` standardizes channels.", "`transforms.RandomHorizontalFlip()` augments training images.", "`transforms.RandomCrop(...)` can add spatial variation."]},
+        {"type": "paragraph", "content": "Even though this lesson uses synthetic data, it is already teaching the same conceptual roles: the dataset supplies `(image, label)` pairs, the dataloader batches them, the model emits logits, the loss compares logits to labels, and evaluation computes accuracy."},
+        {"type": "math", "title": "Train / Test Split Intuition", "content": "Training set: used to fit parameters\nTest set: used only to evaluate generalization"},
+        {"type": "paragraph", "content": "That separation matters a lot in vision because a network can memorize visual training examples surprisingly well. A clean test set tells you whether the model learned a useful visual rule rather than only memorizing the seen images."},
+        {"type": "code", "title": "Normalization preview", "content": "transform = transforms.Compose([\n    transforms.ToTensor(),\n    transforms.Normalize((0.5,), (0.5,)),\n])"},
+        {"type": "paragraph", "content": "Normalization is often one of the first improvements people add when moving from toy images to real datasets. It rescales input channels into a more optimizer-friendly range and can make training more stable."},
+        {"type": "math", "title": "Why Accuracy Is Not Enough", "content": "Accuracy = correct / total\n\nBut loss still matters because it measures confidence,\nnot just whether the top prediction is correct."},
+        {"type": "paragraph", "content": "A vision model can have decent accuracy but still produce poorly calibrated or weak class probabilities. Tracking both loss and accuracy gives a fuller picture of learning."},
+        {"type": "callout", "title": "MNIST and FashionMNIST are the natural next step", "content": "If you want to graduate this chapter into a real dataset workflow, `torchvision.datasets.MNIST` or `FashionMNIST` are the cleanest first steps. They keep the data simple while introducing real dataset loading and transforms."},
+    ],
+    "10": [
+        {"type": "paragraph", "content": "A more detailed mental model of sequence learning is that the model is repeatedly compressing partial history into a state vector. At time step `t`, the hidden state is a summary of what the model currently thinks matters about the first `t` tokens."},
+        {"type": "math", "title": "Recurrent View", "content": "h_t = F(h_{t-1}, x_t)\n\nEach new token updates the running summary state."},
+        {"type": "paragraph", "content": "That recurrence is why order matters naturally in LSTMs. The same set of tokens in a different order leads to a different chain of states, so the final summary can change even if the token multiset stays the same."},
+        {"type": "code", "title": "Comparing two sequence summaries", "content": "tokens_a = torch.tensor([[1, 2, 3, 4]])\ntokens_b = torch.tensor([[4, 3, 2, 1]])\n# same values, different order, potentially different hidden states"},
+        {"type": "paragraph", "content": "This is exactly what a plain bag-of-words style average would fail to represent. Recurrent models keep the notion of progression through the sequence."},
+        {"type": "math", "title": "Embedding Lookup Interpretation", "content": "If token id = i,\nembedding(token_i) = row i of the embedding matrix"},
+        {"type": "paragraph", "content": "That lookup interpretation is important. The embedding layer is not doing a mysterious nonlinear transformation from scratch each time. It is selecting one learned vector per token id and then training those vectors over time."},
+        {"type": "code", "title": "Outputs vs final hidden state", "content": "outputs, (hidden_state, cell_state) = lstm(embedded)\nprint(outputs.shape)       # one vector per time step\nprint(hidden_state.shape)  # final hidden per layer"},
+        {"type": "paragraph", "content": "For sequence classification, the final hidden state is one common summary. For token-level tasks, you would often use the per-time-step outputs instead because you need one prediction per position."},
+        {"type": "list", "title": "When you would use each tensor", "items": ["Use `outputs` for token-level tagging or sequence-to-sequence style reasoning.", "Use `hidden_state[-1]` for whole-sequence classification.", "Use `cell_state` mostly as an internal memory object rather than a human-facing output."]},
+        {"type": "paragraph", "content": "The connection to transformers is also worth making explicit. Transformers replace recurrence with attention, but they still need embeddings, sequence structure, and a way to reduce sequence information into task-specific outputs."},
+        {"type": "callout", "title": "Torchvision contrast", "content": "Images often use `torchvision` datasets and CNN-style spatial reasoning. Sequence tasks do not use `torchvision`, but they rely on the same PyTorch ideas of datasets, batching, model outputs, losses, and evaluation loops."},
+    ],
+}
+
+
+def insert_sections_before_recap(chapter_id: str, extra_sections: list[dict[str, object]]) -> None:
+    for chapter in CHAPTERS:
+        if chapter["id"] != chapter_id:
+            continue
+        recap_index = next(
+            (index for index, section in enumerate(chapter["sections"]) if section.get("title") == "Recap checkpoint"),
+            len(chapter["sections"]),
+        )
+        chapter["sections"][recap_index:recap_index] = deepcopy(extra_sections)
+        return
+
+
+for chapter_id, extra_sections in EXTRA_CHAPTER_SECTIONS.items():
+    insert_sections_before_recap(chapter_id, extra_sections)
+
+
+def normalize_section(section: dict[str, object], index: int, recap_assigned: bool) -> tuple[dict[str, object], bool]:
+    normalized = deepcopy(section)
+    normalized["anchor"] = f"section-{index}"
+    if not recap_assigned and normalized.get("title") == "Recap checkpoint":
+        normalized["anchor"] = "recap"
+        recap_assigned = True
+    return normalized, recap_assigned
+
+
+def normalize_chapter(chapter: dict[str, object]) -> dict[str, object]:
+    normalized = deepcopy(chapter)
+    ui = deepcopy(DEFAULT_CHAPTER_UI)
+    ui.update(normalized.get("ui", {}))
+    normalized["ui"] = ui
+
+    recap_assigned = False
+    normalized_sections = []
+    for index, section in enumerate(normalized["sections"], start=1):
+        item, recap_assigned = normalize_section(section, index, recap_assigned)
+        normalized_sections.append(item)
+    normalized["sections"] = normalized_sections
+    return normalized
+
+
+CHAPTERS_BY_ID = {chapter["id"]: normalize_chapter(chapter) for chapter in CHAPTERS}
 
 
 def public_chapter_summaries() -> list[dict[str, object]]:
@@ -525,7 +759,7 @@ def public_chapter_summaries() -> list[dict[str, object]]:
             "image": chapter["image"],
             "question_count": len(chapter["question_ids"]),
         }
-        for chapter in CHAPTERS
+        for chapter in CHAPTERS_BY_ID.values()
     ]
 
 

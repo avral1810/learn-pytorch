@@ -35,7 +35,7 @@ def execute_submission(chapter_id: str, question_id: str, code: str, mode: str) 
         return {"ok": False, "error": f"Unknown chapter id: {chapter_id}"}, 404
     if question is None:
         return {"ok": False, "error": f"Unknown question id: {question_id}"}, 404
-    if question["chapter_id"] != chapter_id or question_id not in chapter["question_ids"]:
+    if question.chapter_id != chapter_id or question_id not in chapter["question_ids"]:
         return {"ok": False, "error": "Question does not belong to the requested chapter."}, 400
 
     with tempfile.TemporaryDirectory(prefix="quiz-run-") as temp_dir:

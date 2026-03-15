@@ -29,9 +29,9 @@
               </a>
               {% if sidebar_chapter.id == chapter.id %}
               <div class="chapter-subnav">
-                <a class="chapter-subnav-link" href="#lesson-top">Lesson</a>
-                <a class="chapter-subnav-link" href="#recap">Recap</a>
-                <a class="chapter-subnav-link" href="#quiz-app">Quiz</a>
+                {% for item in chapter.ui.subnav_items %}
+                <a class="chapter-subnav-link" href="{{ item.href }}">{{ item.label }}</a>
+                {% endfor %}
               </div>
               {% endif %}
             </div>
@@ -53,25 +53,31 @@
               <h2>Lesson Page</h2>
             </div>
             <div class="resource-links">
-              <button id="open-tutorial-drawer" class="resource-button" type="button">Open Tutorial</button>
-              <button id="open-pdf-drawer" class="resource-button" type="button" data-pdf-url="{{ url_for('resource_file', resource_path=chapter.pdf_path) }}">Open PDF</button>
+              {% for button in chapter.ui.resource_buttons %}
+              <button
+                id="{{ button.id }}"
+                class="resource-button"
+                type="button"
+                data-action="{{ button.action }}"
+                {% if button.action == "open-pdf-drawer" %}data-pdf-url="{{ url_for('resource_file', resource_path=chapter.pdf_path) }}"{% endif %}
+              >{{ button.label }}</button>
+              {% endfor %}
             </div>
           </div>
 
           <img src="{{ url_for('chapter_assets', filename=chapter.image) }}" alt="{{ chapter.title }}" class="chapter-hero-image">
 
-          {% set recap_ns = namespace(assigned=false) %}
           {% for section in chapter.sections %}
             {% if section["type"] == "paragraph" %}
             <p class="lesson-paragraph">{{ section["content"] }}</p>
             {% elif section["type"] == "list" %}
-            <section class="lesson-section" id="{% if not recap_ns.assigned and section['title'] == 'Recap checkpoint' %}recap{% set recap_ns.assigned = true %}{% else %}section-{{ loop.index }}{% endif %}"><h3>{{ section["title"] }}</h3><ul>{% for item in section["items"] %}<li>{{ item }}</li>{% endfor %}</ul></section>
+            <section class="lesson-section" id="{{ section.anchor }}"><h3>{{ section["title"] }}</h3><ul>{% for item in section["items"] %}<li>{{ item }}</li>{% endfor %}</ul></section>
             {% elif section["type"] == "code" %}
-            <section class="lesson-section" id="section-{{ loop.index }}"><h3>{{ section["title"] }}</h3><pre class="lesson-code">{{ section["content"] }}</pre></section>
+            <section class="lesson-section" id="{{ section.anchor }}"><h3>{{ section["title"] }}</h3><pre class="lesson-code">{{ section["content"] }}</pre></section>
             {% elif section["type"] == "math" %}
-            <section class="lesson-section" id="section-{{ loop.index }}"><h3>{{ section["title"] }}</h3><pre class="lesson-math">{{ section["content"] }}</pre></section>
+            <section class="lesson-section" id="{{ section.anchor }}"><h3>{{ section["title"] }}</h3><pre class="lesson-math">{{ section["content"] }}</pre></section>
             {% elif section["type"] == "graph" %}
-            <section class="lesson-section" id="section-{{ loop.index }}">
+            <section class="lesson-section" id="{{ section.anchor }}">
               <h3>{{ section["title"] }}</h3>
               <div class="lesson-graph">
                 <div class="lesson-graph-branches">
@@ -100,7 +106,7 @@
               </div>
             </section>
             {% elif section["type"] == "callout" %}
-            <section class="lesson-callout" id="section-{{ loop.index }}"><h3>{{ section["title"] }}</h3><p>{{ section["content"] }}</p></section>
+            <section class="lesson-callout" id="{{ section.anchor }}"><h3>{{ section["title"] }}</h3><p>{{ section["content"] }}</p></section>
             {% endif %}
           {% endfor %}
         </section>
@@ -113,14 +119,15 @@
               <h2 id="question-title">{{ first_question.title if first_question else "No quiz questions yet" }}</h2>
             </div>
             <div class="button-row">
-              <button id="prev-question" class="action-button ghost">Previous</button>
-              <button id="next-question" class="action-button ghost">Next</button>
+              {% for button in chapter.ui.quiz_nav_buttons %}
+              <button id="{{ button.id }}" class="action-button {{ button.variant }}" type="button" data-action="{{ button.action }}">{{ button.label }}</button>
+              {% endfor %}
             </div>
           </div>
 
           <p id="question-prompt" class="question-prompt">{{ first_question.prompt if first_question else "" }}</p>
           <div class="example-box">
-            <h3>Visible Checks</h3>
+            <h3 id="visible-examples-title">{{ first_question.visible_examples_title if first_question else chapter.ui.question_prompt_title }}</h3>
             <ul id="visible-examples">
               {% if first_question %}
                 {% for example in first_question.visible_examples %}
@@ -133,25 +140,35 @@
           <section class="editor-grid">
             <div class="code-pane">
               <div class="code-pane-header">
-                <h3>Your Answer</h3>
-                <span class="code-pane-note">Write the code for this question here</span>
+                <h3 id="answer-editor-title">{{ first_question.answer_editor_title if first_question else chapter.ui.answer_editor_title }}</h3>
+                <span id="answer-editor-note" class="code-pane-note">{{ first_question.answer_editor_note if first_question else chapter.ui.answer_editor_note }}</span>
               </div>
               <section class="editor-panel"><textarea id="code-editor">{% if first_question %}{{ first_question.starter_code }}{% endif %}</textarea></section>
               <div class="button-row quiz-editor-actions">
-                <button id="run-button" class="action-button secondary">Run</button>
-                <button id="submit-button" class="action-button primary">Submit</button>
-                <button id="hint-button-global" class="action-button ghost">Hint</button>
-                <button id="reset-button" class="action-button ghost">Reset</button>
-                <button id="next-question-inline" class="action-button primary is-hidden" type="button">Next</button>
+                {% for button in chapter.ui.quiz_editor_buttons %}
+                <button
+                  id="{{ button.id }}"
+                  class="action-button {{ button.variant }}{% if button.hidden %} is-hidden{% endif %}"
+                  type="button"
+                  data-action="{{ button.action }}"
+                >{{ button.label }}</button>
+                {% endfor %}
               </div>
             </div>
           </section>
 
           <section class="results-panel">
             <div class="results-grid">
-              <div class="result-card"><h3>Summary</h3><div id="summary-output" class="result-output">{% if first_question %}Question 1 of {{ chapter.questions|length }}{% endif %}</div></div>
-              <div class="result-card"><h3>Stdout</h3><pre id="stdout-output" class="result-output"></pre></div>
-              <div class="result-card"><h3>Stderr</h3><pre id="stderr-output" class="result-output"></pre></div>
+              {% for panel in chapter.ui.result_panels %}
+              <div class="result-card">
+                <h3>{{ panel.title }}</h3>
+                {% if panel.tag == "pre" %}
+                <pre id="{{ panel.id }}" class="{{ panel.class_name }}">{% if panel.id == "summary-output" and first_question %}Question 1 of {{ chapter.questions|length }}{% endif %}</pre>
+                {% else %}
+                <div id="{{ panel.id }}" class="{{ panel.class_name }}">{% if panel.id == "summary-output" and first_question %}Question 1 of {{ chapter.questions|length }}{% endif %}</div>
+                {% endif %}
+              </div>
+              {% endfor %}
             </div>
           </section>
         </section>
@@ -185,16 +202,21 @@
           <div class="code-pane-header">
             <h3>Playground</h3>
             <div class="button-row">
-              <button id="run-playground-button" class="action-button secondary" type="button">Run</button>
-              <button id="reset-playground-button" class="action-button ghost" type="button">Reset</button>
+              {% for button in chapter.ui.playground_buttons %}
+              <button id="{{ button.id }}" class="action-button {{ button.variant }}" type="button" data-action="{{ button.action }}">{{ button.label }}</button>
+              {% endfor %}
             </div>
           </div>
           <section class="editor-panel drawer-editor-panel">
             <textarea id="playground-editor">{{ chapter.playground_starter }}</textarea>
           </section>
           <div class="drawer-output-grid">
-            <div class="result-card"><h3>Playground Stdout</h3><pre id="playground-stdout" class="result-output"></pre></div>
-            <div class="result-card"><h3>Playground Stderr</h3><pre id="playground-stderr" class="result-output"></pre></div>
+            {% for panel in chapter.ui.playground_result_panels %}
+            <div class="result-card">
+              <h3>{{ panel.title }}</h3>
+              <pre id="{{ panel.id }}" class="{{ panel.class_name }}"></pre>
+            </div>
+            {% endfor %}
           </div>
         </div>
       </div>

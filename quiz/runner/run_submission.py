@@ -10,6 +10,7 @@ import traceback
 from contextlib import redirect_stderr, redirect_stdout
 from pathlib import Path
 
+from quiz.questions.hidden_cases import build_hidden_tests
 from quiz.questions.data import QUESTIONS_BY_ID
 
 
@@ -49,7 +50,7 @@ def serialize_value(value):
 def extract_test_snapshot(frame_locals: dict[str, object]) -> dict[str, object]:
     filtered_inputs = {}
     for key, value in frame_locals.items():
-        if key in {"solution_module", "actual", "expected"}:
+        if key in {"solution_module", "actual", "expected", "target", "assertion", "case_args", "case_assertions", "case_kwargs", "symbol"}:
             continue
         if key.startswith("__"):
             continue
@@ -105,18 +106,25 @@ def normalize_test_case(test_case):
     return name, test_fn, metadata
 
 
-def run_tests(test_module_name: str, solution_path: Path, mode: str) -> dict[str, object]:
+def select_tests(question, mode: str):
+    if mode == "submit" and question.tests.hidden_binary_key and question.answer.symbol_name:
+        generated = build_hidden_tests(question.tests.hidden_binary_key, question.answer.symbol_name)
+        if generated:
+            return generated
+
+    test_module = importlib.import_module(question.tests.module_name)
+    if mode == "run":
+        return test_module.get_visible_tests()
+    return test_module.get_hidden_tests()
+
+
+def run_tests(question, solution_path: Path, mode: str) -> dict[str, object]:
     stdout_buffer = io.StringIO()
     stderr_buffer = io.StringIO()
 
     with redirect_stdout(stdout_buffer), redirect_stderr(stderr_buffer):
         solution_module = load_solution_module(solution_path)
-        test_module = importlib.import_module(test_module_name)
-
-        if mode == "run":
-            tests = test_module.get_visible_tests()
-        else:
-            tests = test_module.get_hidden_tests()
+        tests = select_tests(question, mode)
 
         results: list[dict[str, object]] = []
         passed = 0
@@ -182,7 +190,7 @@ def main() -> int:
     solution_path = Path(solution_path_text)
 
     try:
-        payload = run_tests(question["test_module"], solution_path, mode)
+        payload = run_tests(question, solution_path, mode)
         print(json.dumps(payload))
         return 0 if payload["ok"] else 0
     except Exception as exc:

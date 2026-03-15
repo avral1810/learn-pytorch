@@ -7,6 +7,14 @@ let hintCounts = {};
 let lastRunPassed = false;
 let lastRunQuestionId = null;
 
+function chapterUi() {
+  return (window.__CHAPTER_DATA__ && window.__CHAPTER_DATA__.ui) || {};
+}
+
+function findActionElements(action) {
+  return Array.from(document.querySelectorAll(`[data-action="${action}"]`));
+}
+
 function triggerRun() {
   return sendCode("run");
 }
@@ -25,25 +33,24 @@ function triggerPrimaryShortcut() {
 
 function updateNavigationState() {
   const prevButton = document.getElementById("prev-question");
-  const nextButton = document.getElementById("next-question");
+  const nextButtons = findActionElements("next-question");
   const nextInlineButton = document.getElementById("next-question-inline");
   const progress = document.getElementById("question-progress");
   const question = currentQuestion();
 
-  if (!prevButton || !nextButton || !nextInlineButton || !progress || !question) {
+  if (!prevButton || !nextInlineButton || !progress || !question) {
     return;
   }
 
   prevButton.disabled = currentIndex === 0;
-  nextButton.disabled = questions.length === 0;
+  nextButtons.forEach((button) => { button.disabled = questions.length === 0; });
   nextInlineButton.disabled = questions.length === 0;
   progress.textContent = `${currentIndex + 1} / ${questions.length}`;
   prevButton.textContent = "Previous";
   const nextLabel = currentIndex === questions.length - 1
     ? "Finish Chapter"
     : "Next";
-  nextButton.textContent = nextLabel;
-  nextInlineButton.textContent = nextLabel;
+  nextButtons.forEach((button) => { button.textContent = nextLabel; });
 }
 
 function hideInlineNext() {
@@ -286,6 +293,9 @@ function renderCurrentQuestion(resetCode = false) {
 
   document.getElementById("question-title").textContent = question.title;
   document.getElementById("question-prompt").textContent = question.prompt;
+  document.getElementById("visible-examples-title").textContent = question.visible_examples_title || chapterUi().question_prompt_title || "Visible Checks";
+  document.getElementById("answer-editor-title").textContent = question.answer_editor_title || chapterUi().answer_editor_title || "Your Answer";
+  document.getElementById("answer-editor-note").textContent = question.answer_editor_note || chapterUi().answer_editor_note || "Write the code for this question here";
 
   const examples = document.getElementById("visible-examples");
   examples.innerHTML = "";
@@ -406,49 +416,42 @@ async function runPlayground() {
 }
 
 function bindQuizUi() {
-  document.getElementById("run-button").addEventListener("click", triggerRun);
-  document.getElementById("submit-button").addEventListener("click", triggerSubmit);
-  document.getElementById("hint-button-global").addEventListener("click", applyGlobalHint);
-  document.getElementById("reset-button").addEventListener("click", () => renderCurrentQuestion(true));
-  document.getElementById("prev-question").addEventListener("click", () => {
-    if (currentIndex > 0) {
-      currentIndex -= 1;
-      renderCurrentQuestion(true);
-    }
-  });
-  document.getElementById("next-question").addEventListener("click", goToNextQuestion);
-  document.getElementById("next-question-inline").addEventListener("click", goToNextQuestion);
-
-  const closeButton = document.getElementById("tutorial-drawer-close");
-  if (closeButton) closeButton.addEventListener("click", closeTutorialDrawer);
-
-  const pdfCloseButton = document.getElementById("pdf-drawer-close");
-  if (pdfCloseButton) pdfCloseButton.addEventListener("click", closePdfDrawer);
-
-  const openButton = document.getElementById("open-tutorial-drawer");
-  if (openButton) {
-    openButton.addEventListener("click", openTutorialDrawer);
-  }
-
-  const openPdfButton = document.getElementById("open-pdf-drawer");
-  if (openPdfButton) {
-    openPdfButton.addEventListener("click", () => openPdfDrawer(openPdfButton.dataset.pdfUrl));
-  }
-
-  const runPlaygroundButton = document.getElementById("run-playground-button");
-  if (runPlaygroundButton) runPlaygroundButton.addEventListener("click", runPlayground);
-
-  const resetPlaygroundButton = document.getElementById("reset-playground-button");
-  if (resetPlaygroundButton) {
-    resetPlaygroundButton.addEventListener("click", () => {
+  const actionHandlers = {
+    "run-code": triggerRun,
+    "submit-code": triggerSubmit,
+    "show-hint": applyGlobalHint,
+    "reset-question": () => renderCurrentQuestion(true),
+    "previous-question": () => {
+      if (currentIndex > 0) {
+        currentIndex -= 1;
+        renderCurrentQuestion(true);
+      }
+    },
+    "next-question": goToNextQuestion,
+    "open-tutorial-drawer": openTutorialDrawer,
+    "open-pdf-drawer": (event) => openPdfDrawer(event.currentTarget.dataset.pdfUrl),
+    "run-playground": runPlayground,
+    "reset-playground": () => {
       if (!playgroundEditor) {
         return;
       }
       playgroundEditor.setValue(window.__CHAPTER_DATA__.playground_starter || "");
       setPlainOutput("playground-stdout", "");
       setPlainOutput("playground-stderr", "");
+    },
+  };
+
+  Object.entries(actionHandlers).forEach(([action, handler]) => {
+    findActionElements(action).forEach((element) => {
+      element.addEventListener("click", handler);
     });
-  }
+  });
+
+  const closeButton = document.getElementById("tutorial-drawer-close");
+  if (closeButton) closeButton.addEventListener("click", closeTutorialDrawer);
+
+  const pdfCloseButton = document.getElementById("pdf-drawer-close");
+  if (pdfCloseButton) pdfCloseButton.addEventListener("click", closePdfDrawer);
 
   window.addEventListener("keydown", (event) => {
     const activeElement = document.activeElement;
