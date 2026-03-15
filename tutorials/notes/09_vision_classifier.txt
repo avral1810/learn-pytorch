@@ -1,4 +1,4 @@
-Lesson 09: Vision Classifier
+Lesson 10: Vision Classifier
 ============================
 
 Goal

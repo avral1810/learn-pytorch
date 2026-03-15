@@ -1,0 +1,100 @@
+Lesson 08: Manual CNN From Scratch
+==================================
+
+Goal
+----
+See a convolutional neural network as raw tensors and tensor operations instead of only `nn.Module` layers.
+
+This lesson focuses on:
+- raw convolution weights
+- `F.conv2d`
+- max pooling
+- flattening
+- a manual classifier head
+
+Why do this manually
+--------------------
+CNNs can look magical when written only as stacked layers.
+
+This lesson shows the lower-level picture:
+
+    images -> conv -> relu -> pool -> conv -> relu -> pool -> flatten -> linear head
+
+The point is not that manual CNN code is better.
+The point is that you can see what the layers really do.
+
+Input shape
+-----------
+Images are stored as:
+
+    (batch, channels, height, width)
+
+Here the synthetic dataset uses grayscale images, so channels = 1.
+
+Convolution weights
+-------------------
+The first convolution weight has shape:
+
+    (8, 1, 3, 3)
+
+Meaning:
+- 8 output filters
+- 1 input channel
+- 3 x 3 kernel size
+
+The second convolution weight has shape:
+
+    (16, 8, 3, 3)
+
+Meaning:
+- 16 output filters
+- 8 input channels from the previous layer
+
+Shape flow
+----------
+Starting from:
+
+    (batch, 1, 16, 16)
+
+The network does:
+
+    conv -> (batch, 8, 16, 16)
+    pool -> (batch, 8, 8, 8)
+    conv -> (batch, 16, 8, 8)
+    pool -> (batch, 16, 4, 4)
+    flatten -> (batch, 256)
+
+Then a manual classifier maps:
+
+    256 -> 32 -> 3 logits
+
+Why pooling matters
+-------------------
+Max pooling reduces spatial size while keeping the strongest local response.
+
+This makes the later classifier cheaper and encourages the model to keep the most useful
+activations from nearby regions.
+
+Why this is still a CNN
+-----------------------
+Even though the code uses raw tensors and `F.conv2d`, the architecture is still the same
+basic CNN idea:
+
+    local filters
+    shared weights
+    pooling
+    final classifier
+
+Exercises
+---------
+1. Print the shape after each convolution and pooling step.
+2. Change the first convolution from 8 filters to 4.
+3. Remove one pooling layer and recompute the flatten size.
+4. Change the classifier hidden width from 32 to 64.
+
+Self-check questions
+--------------------
+1. Why does the first convolution weight have shape `(8, 1, 3, 3)`?
+2. Why does pooling change height and width but not batch size?
+3. Why must the flatten size match the first linear layer input size?
+4. What makes this a convolutional model instead of a plain MLP?

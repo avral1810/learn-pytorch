@@ -1,4 +1,4 @@
-Lesson 13: CPU to Apple Metal (MPS)
+Lesson 17: CPU to Apple Metal (MPS)
 ===================================
 
 Goal

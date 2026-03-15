@@ -45,3 +45,12 @@
 - `14_basic_rnn_sequence_classifier`:
   `Recurrent neural network unfold diagram`
   https://commons.wikimedia.org/wiki/File:Recurrent_neural_network_unfold.svg
+- `15_manual_cnn_from_scratch`:
+  `Convolutional network illustration`
+  https://commons.wikimedia.org/wiki/File:Convolutional_Network.png
+- `16_manual_rnn_from_scratch`:
+  `Recurrent neural network unfold diagram`
+  https://commons.wikimedia.org/wiki/File:Recurrent_neural_network_unfold.svg
+- `17_manual_transformer_from_scratch`:
+  `Encoder self-attention diagram`
+  https://commons.wikimedia.org/wiki/File:Encoder_self-attention,_detailed_diagram.png

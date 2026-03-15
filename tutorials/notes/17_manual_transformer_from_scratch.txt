@@ -1,0 +1,84 @@
+Lesson 14: Manual Transformer From Scratch
+==========================================
+
+Goal
+----
+Understand a tiny Transformer-style classifier by writing attention with raw tensor operations.
+
+This lesson focuses on:
+- embedding lookup
+- positional encoding
+- query, key, and value projections
+- attention weights
+- mean pooling for classification
+
+Why write attention manually
+----------------------------
+Transformers become easier once you stop seeing attention as a black box.
+
+This lesson shows the basic sequence:
+
+    embeddings + positions
+    -> queries, keys, values
+    -> attention scores
+    -> attention-weighted sequence features
+    -> classifier
+
+Queries, keys, and values
+-------------------------
+From one sequence tensor `x`, the script computes:
+
+    q = x W_q
+    k = x W_k
+    v = x W_v
+
+These are just learned linear projections.
+
+Attention scores
+----------------
+The score matrix is:
+
+    q @ k^T / sqrt(d_model)
+
+Then softmax turns those scores into attention weights.
+
+Those weights tell each position how strongly to read from the other positions.
+
+What attention is doing
+-----------------------
+Each token can gather information from the rest of the sequence.
+
+That is the key contrast with recurrence:
+- RNNs pass information step by step through time
+- attention lets positions interact more directly within a layer
+
+Why positional encoding is still needed
+---------------------------------------
+Attention alone does not know sequence order.
+
+So the script adds sinusoidal positional encodings before attention so token vectors carry
+both content information and position information.
+
+Pooling
+-------
+After the manual attention and feedforward steps, the lesson uses:
+
+    mean over sequence length
+
+to get one vector per example for classification.
+
+This keeps the model simple enough to understand.
+
+Exercises
+---------
+1. Print the shape of `q`, `k`, `v`, attention scores, and pooled vectors.
+2. Inspect one attention weight matrix for a small batch.
+3. Change `EMBED_DIM` and observe how the scaling term changes.
+4. Compare this script with the higher-level Transformer chapter.
+
+Self-check questions
+--------------------
+1. Why do we divide attention scores by `sqrt(d_model)`?
+2. Why is softmax applied across the last score dimension?
+3. Why does the model still need positional encoding?
+4. What is the conceptual difference between recurrence and attention?

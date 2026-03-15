@@ -1,4 +1,4 @@
-Lesson 12: Toy GAN
+Lesson 16: Toy GAN
 ==================
 
 Goal

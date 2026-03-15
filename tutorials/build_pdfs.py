@@ -100,6 +100,21 @@ LESSON_IMAGES = {
         "caption": "Recurrent neural network unfold diagram",
         "source": "https://commons.wikimedia.org/wiki/File:Recurrent_neural_network_unfold.svg",
     },
+    "15_manual_cnn_from_scratch": {
+        "path": ASSETS_DIR / "03_convolutional_network.png",
+        "caption": "Convolutional network illustration",
+        "source": "https://commons.wikimedia.org/wiki/File:Convolutional_Network.png",
+    },
+    "16_manual_rnn_from_scratch": {
+        "path": ASSETS_DIR / "14_rnn_unfold.svg",
+        "caption": "Recurrent neural network unfold diagram",
+        "source": "https://commons.wikimedia.org/wiki/File:Recurrent_neural_network_unfold.svg",
+    },
+    "17_manual_transformer_from_scratch": {
+        "path": ASSETS_DIR / "05_encoder_self_attention.png",
+        "caption": "Encoder self-attention diagram",
+        "source": "https://commons.wikimedia.org/wiki/File:Encoder_self-attention,_detailed_diagram.png",
+    },
 }
 
 

@@ -1,0 +1,83 @@
+Lesson 11: Manual RNN From Scratch
+==================================
+
+Goal
+----
+Understand recurrence by writing the hidden-state update loop explicitly with raw tensors.
+
+This lesson focuses on:
+- manual embedding lookup
+- explicit recurrent updates
+- hidden state across time
+- final hidden summary
+- sequence classification
+
+Why this lesson matters
+-----------------------
+When you write an RNN manually, you can finally see that sequence learning is not mysterious.
+
+The model simply repeats one rule:
+
+    new hidden state = function(current token, previous hidden state)
+
+Then after the final step, it uses that hidden state as the sequence summary.
+
+Manual recurrence
+-----------------
+The update rule looks like:
+
+    h_t = tanh(x_t W_xh + h_{t-1} W_hh + b_h)
+
+This is the core idea behind a vanilla RNN.
+
+Each time step:
+- reads one token representation
+- mixes it with the previous hidden state
+- writes a new hidden state
+
+Embedding lookup
+----------------
+The embedding table has shape:
+
+    (vocab_size, embed_dim)
+
+Indexing with token ids produces:
+
+    (batch, seq_len, embed_dim)
+
+So the model starts with integer ids but quickly moves into dense feature vectors.
+
+Why the loop is explicit here
+-----------------------------
+`nn.RNN` hides the time loop inside a module.
+
+This lesson writes the loop directly:
+
+    for t in range(seq_len):
+        hidden = tanh(x_t @ wxh + hidden @ whh + bh)
+
+That is pedagogically useful because you can see exactly how time enters the computation.
+
+Why long sequences are hard
+---------------------------
+Vanilla RNNs pass gradients through many repeated recurrent steps.
+
+That can make the gradients:
+- vanish
+- explode
+
+So longer-range memory is harder to learn than in LSTMs.
+
+Exercises
+---------
+1. Print the hidden state shape inside the loop.
+2. Replace `tanh` with `relu` and compare behavior.
+3. Increase `HIDDEN_SIZE`.
+4. Compare this script with the `nn.RNN` lesson and identify what was abstracted away there.
+
+Self-check questions
+--------------------
+1. What is the role of `wxh`?
+2. What is the role of `whh`?
+3. Why does the hidden state need to persist across time steps?
+4. Why is the final hidden state useful for whole-sequence classification?

@@ -1,4 +1,4 @@
-Lesson 14: Basic RNN Sequence Classifier
+Lesson 12: Basic RNN Sequence Classifier
 ========================================
 
 Goal

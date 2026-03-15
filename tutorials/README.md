@@ -43,19 +43,25 @@ python3 -c "import torch; print(torch.__version__); print(torch.backends.mps.is_
    Build a small neural net with raw parameter tensors and manual forward passes.
 8. `07_basic_nn_mlp_with_nn_module.py`
    Build a small MLP classifier with `nn.Sequential` after seeing the from-scratch version.
-9. `08_cnn_basics.py`
+9. `15_manual_cnn_from_scratch.py`
+   Learn CNN feature extraction from raw convolution tensors, pooling, and a manual classifier head.
+10. `08_cnn_basics.py`
    Understand convolutions, pooling, and a tiny CNN.
-10. `09_vision_classifier.py`
+11. `09_vision_classifier.py`
    Train a CNN on generated image patterns and practice vision workflow.
-11. `14_basic_rnn_sequence_classifier.py`
+12. `16_manual_rnn_from_scratch.py`
+   Learn recurrence by explicitly updating hidden state with raw tensors across sequence time steps.
+13. `14_basic_rnn_sequence_classifier.py`
    Learn the core recurrent-network idea with embeddings, hidden state, and a sequence classifier built from the final RNN summary.
-12. `10_lstm_sequence_classifier.py`
+14. `10_lstm_sequence_classifier.py`
    Learn sequence modeling with embeddings, hidden state, and LSTM output shapes.
-13. `11_transformer_basics.py`
+15. `17_manual_transformer_from_scratch.py`
+   Learn attention by manually building queries, keys, values, and a tiny Transformer-style classifier.
+16. `11_transformer_basics.py`
    Build a minimal Transformer encoder classifier.
-14. `12_toy_gan.py`
+17. `12_toy_gan.py`
    Learn generator-vs-discriminator training on a tiny 1D distribution.
-15. `13_device_cpu_to_mps.py`
+18. `13_device_cpu_to_mps.py`
    Learn how to move the same code from CPU to Apple Metal (`mps`).
 
 ## Suggested rhythm
@@ -77,6 +83,7 @@ python3 -c "import torch; print(torch.__version__); print(torch.backends.mps.is_
 - RNNs: recurrence, final hidden summaries, and sequence order
 - Vision: image tensors, augmentations, normalization, classifier pipeline
 - Transformers: embeddings, positional information, attention intuition
+- From scratch sequence models: explicit recurrence and explicit attention math
 - Generative models: GAN basics, adversarial training, `detach()` in practice
 - Devices: CPU first, then switch to `mps`
 

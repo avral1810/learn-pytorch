@@ -1,4 +1,4 @@
-Lesson 08: CNN Basics
+Lesson 09: CNN Basics
 =====================
 
 Goal
